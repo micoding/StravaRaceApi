@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using StravaRaceAPI.Api.Clients;
 using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
 
@@ -54,7 +53,7 @@ public static class DbContextExtensions
     //         throw new NotFoundException(ErrorMessages.EventNotFoundMessage(segmentId));
     //     return seg;
     // }
-    
+
 
     public static async Task<bool> UsersExist(this ApiDBContext context, List<int> userIds)
     {

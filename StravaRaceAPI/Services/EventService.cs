@@ -31,26 +31,6 @@ public class EventService : IEventService
         _mapper = mapper;
         _userContextService = userContextService;
     }
-    
-    public async Task<Segment> TryGetSegment(int segmentId)
-    {
-        var seg = await _context.GetSegment(segmentId) ?? await TryPullSegment(segmentId);
-        return seg;
-    }
-    
-    public async Task<Segment> TryPullSegment(int segmentId)
-    {
-        var user = await _context.TryGetUser(_userContextService.GetUserId ?? default(int));
-        
-        var segmentClient = new SegmentClient(new TokenHandler(user.Token, _context));
-
-        var segment = await segmentClient.PullSegment(segmentId);
-        
-        await _context.Segments.AddAsync(segment);
-        await _context.SaveChangesAsync();
-        
-        return segment;
-    }
 
     public async Task<Event> CreateEvent(CreateEventDTO eventDto)
     {
@@ -147,5 +127,25 @@ public class EventService : IEventService
 
         await _context.Results.AddAsync(newResult);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<Segment> TryGetSegment(int segmentId)
+    {
+        var seg = await _context.GetSegment(segmentId) ?? await TryPullSegment(segmentId);
+        return seg;
+    }
+
+    public async Task<Segment> TryPullSegment(int segmentId)
+    {
+        var user = await _context.TryGetUser(_userContextService.GetUserId ?? default(int));
+
+        var segmentClient = new SegmentClient(new TokenHandler(user.Token, _context));
+
+        var segment = await segmentClient.PullSegment(segmentId);
+
+        await _context.Segments.AddAsync(segment);
+        await _context.SaveChangesAsync();
+
+        return segment;
     }
 }

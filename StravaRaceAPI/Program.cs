@@ -45,7 +45,7 @@ builder.Services.AddAuthentication(opt =>
     {
         ValidIssuer = authenticationOptions.JwtIssuer,
         ValidAudience = authenticationOptions.JwtIssuer,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationOptions.JwtKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationOptions.JwtKey))
     };
 });
 
@@ -100,7 +100,7 @@ app.MapPost("event", async (ApiDBContext db, [FromBody] CreateEventDTO dto, IEve
     .Produces<SegmentDTO>()
     .Produces(StatusCodes.Status404NotFound);
 
-app.MapGet("connectWithStrava", async ([FromBody]HttpClient client, IMapper mapper, IUserService service) =>
+app.MapGet("connectWithStrava", async ([FromBody] HttpClient client, IMapper mapper, IUserService service) =>
     {
         var redirect = await client.GetAsync(Endpoints.AuthorizeCode);
         if (!redirect.IsSuccessStatusCode) throw new ApiCommunicationError("Could not connect to strava");
