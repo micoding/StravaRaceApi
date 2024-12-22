@@ -1,5 +1,9 @@
-using AutoMapper;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
 
@@ -7,23 +11,24 @@ namespace StravaRaceAPI.Services;
 
 public interface IUserService
 {
-    Task<User> SignInWithStrava(User userToSignIn);
-    Task<User> Refresh(User user);
+    Task<string> SignInWithStrava(User userToSignIn);
+    Task<string> Refresh(User user);
     Task Delete(int userId);
+    string GenerateJwtToken(User user);
 }
 
 public class UserService : IUserService
 {
     private readonly ApiDBContext _context;
-    private readonly IMapper _mapper;
+    private readonly AuthenticationOptions _authOptions;
 
-    public UserService(ApiDBContext context, IMapper mapper)
+    public UserService(ApiDBContext context, AuthenticationOptions authOptions)
     {
         _context = context;
-        _mapper = mapper;
+        _authOptions = authOptions;
     }
-
-    public async Task<User> SignInWithStrava(User userToSignIn)
+    
+    public async Task<string> SignInWithStrava(User userToSignIn)
     {
         var user = await _context.Users
             .Include(u => u.Token)
@@ -34,15 +39,15 @@ public class UserService : IUserService
         _context.Users.Add(userToSignIn);
         await _context.SaveChangesAsync();
 
-        return userToSignIn;
+        return GenerateJwtToken(userToSignIn);
     }
 
-    public async Task<User> Refresh(User user)
+    public async Task<string> Refresh(User user)
     {
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
 
-        return user;
+        return GenerateJwtToken(user);
     }
 
     public async Task Delete(int userId)
@@ -52,5 +57,27 @@ public class UserService : IUserService
 
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
+    }
+    
+    public string GenerateJwtToken(User user)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.FirstName)
+        };
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authOptions.JwtKey));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var expires = DateTime.Now + TimeSpan.FromDays(_authOptions.JwtExpireDays);
+
+        var token = new JwtSecurityToken(_authOptions.JwtIssuer,
+            _authOptions.JwtIssuer,
+            claims,
+            expires: expires,
+            signingCredentials: creds);
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+
+        return tokenHandler.WriteToken(token);
     }
 }

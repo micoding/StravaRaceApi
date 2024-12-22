@@ -1,7 +1,10 @@
+using System.Text;
 using System.Web;
 using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using StravaRaceAPI;
 using StravaRaceAPI.Api;
 using StravaRaceAPI.Api.Clients;
@@ -9,6 +12,7 @@ using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
 using StravaRaceAPI.Models;
 using StravaRaceAPI.Services;
+using TokenHandler = StravaRaceAPI.Api.TokenHandler;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +26,30 @@ builder.Services.AddSingleton(apiConfiguration);
 builder.Services.AddAutoMapper(typeof(StravaMappingProfile));
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserContextService, UserContextService>();
+builder.Services.AddHttpContextAccessor();
+
+var authenticationOptions = new AuthenticationOptions();
+builder.Configuration.GetSection(nameof(AuthenticationOptions)).Bind(authenticationOptions);
+builder.Services.AddSingleton(authenticationOptions);
+builder.Services.AddAuthentication(opt =>
+{
+    opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    opt.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(cfg =>
+{
+    cfg.RequireHttpsMetadata = false;
+    cfg.SaveToken = true;
+    cfg.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = authenticationOptions.JwtIssuer,
+        ValidAudience = authenticationOptions.JwtIssuer,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationOptions.JwtKey)),
+    };
+});
+
+builder.Services.AddAuthorizationBuilder().AddPolicy("LoggedIn", policy => policy.RequireAuthenticatedUser());
 
 
 builder.Services.AddDbContext<ApiDBContext>(options =>
@@ -72,7 +100,7 @@ app.MapPost("event", async (ApiDBContext db, [FromBody] CreateEventDTO dto, IEve
     .Produces<SegmentDTO>()
     .Produces(StatusCodes.Status404NotFound);
 
-app.MapGet("connectWithStrava", async (ApiDBContext db, HttpClient client, IMapper mapper, IUserService service) =>
+app.MapGet("connectWithStrava", async ([FromBody]HttpClient client, IMapper mapper, IUserService service) =>
     {
         var redirect = await client.GetAsync(Endpoints.AuthorizeCode);
         if (!redirect.IsSuccessStatusCode) throw new ApiCommunicationError("Could not connect to strava");
@@ -91,16 +119,19 @@ app.MapGet("connectWithStrava", async (ApiDBContext db, HttpClient client, IMapp
         if (userDto is null || tokenDto is null) throw new ApiCommunicationError("Invalid response");
 
         var user = mapper.Map<User>(userDto);
-        var token = mapper.Map<Token>(tokenDto);
+        var tokenApi = mapper.Map<Token>(tokenDto);
 
-        user.Token = token;
+        user.Token = tokenApi;
 
-        user = await service.SignInWithStrava(user);
+        var token = await service.SignInWithStrava(user);
 
-        return Results.Ok(user);
+        return Results.Ok(token);
     })
-    .Produces<SegmentDTO>()
-    .Produces(StatusCodes.Status404NotFound);
+    .Produces(StatusCodes.Status404NotFound)
+    .RequireAuthorization("LoggedIn");
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {

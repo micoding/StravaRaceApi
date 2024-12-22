@@ -1,5 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using StravaRaceAPI.Api;
+using StravaRaceAPI.Api.Clients;
 using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
 using StravaRaceAPI.Models;
@@ -21,11 +23,33 @@ public class EventService : IEventService
 {
     private readonly ApiDBContext _context;
     private readonly IMapper _mapper;
+    private readonly IUserContextService _userContextService;
 
-    public EventService(ApiDBContext context, IMapper mapper)
+    public EventService(ApiDBContext context, IMapper mapper, IUserContextService userContextService)
     {
         _context = context;
         _mapper = mapper;
+        _userContextService = userContextService;
+    }
+    
+    public async Task<Segment> TryGetSegment(int segmentId)
+    {
+        var seg = await _context.GetSegment(segmentId) ?? await TryPullSegment(segmentId);
+        return seg;
+    }
+    
+    public async Task<Segment> TryPullSegment(int segmentId)
+    {
+        var user = await _context.TryGetUser(_userContextService.GetUserId ?? default(int));
+        
+        var segmentClient = new SegmentClient(new TokenHandler(user.Token, _context));
+
+        var segment = await segmentClient.PullSegment(segmentId);
+        
+        await _context.Segments.AddAsync(segment);
+        await _context.SaveChangesAsync();
+        
+        return segment;
     }
 
     public async Task<Event> CreateEvent(CreateEventDTO eventDto)
@@ -34,7 +58,7 @@ public class EventService : IEventService
 
         newEvent.Creator = await _context.TryGetUser(eventDto.CreatorId);
 
-        newEvent.Segments.Add(await _context.TryGetSegment(eventDto.SegmentIds.FirstOrDefault()));
+        newEvent.Segments.Add(await TryGetSegment(eventDto.SegmentIds.FirstOrDefault()));
 
         await _context.Events.AddAsync(newEvent);
         await _context.SaveChangesAsync();
@@ -110,7 +134,7 @@ public class EventService : IEventService
         var newResult = new Result();
         var usr = await _context.TryGetUser(userId);
         var ev = await _context.TryGetEvent(eventId);
-        var seg = await _context.TryGetSegment(segmentId);
+        var seg = await TryGetSegment(segmentId);
 
         newResult.Event = ev;
         newResult.Segment = seg;

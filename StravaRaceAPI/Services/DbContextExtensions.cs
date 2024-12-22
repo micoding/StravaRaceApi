@@ -27,16 +27,15 @@ public static class DbContextExtensions
 
     public static async Task<User> TryGetUser(this ApiDBContext context, int userId)
     {
-        var usr = await context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+        var usr = await context.Users.Include(u => u.Token).FirstOrDefaultAsync(x => x.Id == userId);
         if (usr is null)
             throw new NotFoundException(ErrorMessages.UserNotFoundMessage(userId));
         return usr;
     }
 
-    public static async Task<Segment> TryGetSegment(this ApiDBContext context, int segmentId)
+    public static async Task<Segment?> GetSegment(this ApiDBContext context, int segmentId)
     {
-        var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId) ??
-                  await context.TryPullSegment(segmentId);
+        var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId);
         return seg;
     }
 
@@ -55,14 +54,7 @@ public static class DbContextExtensions
     //         throw new NotFoundException(ErrorMessages.EventNotFoundMessage(segmentId));
     //     return seg;
     // }
-
-    public static async Task<Segment> TryPullSegment(this ApiDBContext context, int segmentId)
-    {
-        var segmentClient = new SegmentClient();
-
-        var segment = await segmentClient.PullSegment(segmentId);
-        return segment;
-    }
+    
 
     public static async Task<bool> UsersExist(this ApiDBContext context, List<int> userIds)
     {
