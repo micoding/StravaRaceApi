@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StravaRaceAPI.Entities;
@@ -19,15 +18,15 @@ public interface IUserService
 
 public class UserService : IUserService
 {
-    private readonly ApiDBContext _context;
     private readonly AuthenticationOptions _authOptions;
+    private readonly ApiDBContext _context;
 
     public UserService(ApiDBContext context, AuthenticationOptions authOptions)
     {
         _context = context;
         _authOptions = authOptions;
     }
-    
+
     public async Task<string> SignInWithStrava(User userToSignIn)
     {
         var user = await _context.Users
@@ -58,7 +57,7 @@ public class UserService : IUserService
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
     }
-    
+
     public string GenerateJwtToken(User user)
     {
         var claims = new List<Claim>
