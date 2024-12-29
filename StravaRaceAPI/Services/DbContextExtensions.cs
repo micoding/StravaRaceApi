@@ -38,23 +38,6 @@ public static class DbContextExtensions
         return seg;
     }
 
-    // public static async Task<List<Segment>> TryGetSegments(this ApiDBContext context, List<int> segmentId)
-    // {
-    //     var newSegments = new List<Segment>();
-    //     foreach (var segmentId in segmentId)
-    //     {
-    //         var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId);
-    //         if (seg is null)
-    //             throw new NotFoundException(ErrorMessages.EventNotFoundMessage(segmentId));
-    //     }
-    //
-    //     var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId);
-    //     if (seg is null)
-    //         throw new NotFoundException(ErrorMessages.EventNotFoundMessage(segmentId));
-    //     return seg;
-    // }
-
-
     public static async Task<bool> UsersExist(this ApiDBContext context, List<int> userIds)
     {
         return await Task.FromResult(userIds.All(id => context.Users.Any(u => u.Id == id)));

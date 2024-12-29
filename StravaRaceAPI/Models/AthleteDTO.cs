@@ -1,11 +1,18 @@
+using System.Text.Json.Serialization;
+
 namespace StravaRaceAPI.Models;
 
 public class AthleteDTO
 {
-    public int Id { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string Userame { get; set; }
+    [JsonPropertyName("id")] public int Id { get; set; }
+
+    [JsonPropertyName("firstname")] public string FirstName { get; set; }
+
+    [JsonPropertyName("lastname")] public string LastName { get; set; }
+
+    [JsonPropertyName("username")] public string Userame { get; set; }
+
     public string PhotoUrl { get; set; }
-    public string Sex { get; set; }
+
+    [JsonPropertyName("sex")] public string Sex { get; set; }
 }
