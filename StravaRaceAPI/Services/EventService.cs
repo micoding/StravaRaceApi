@@ -69,7 +69,8 @@ public class EventService : IEventService
         var usr = await _context.TryGetUser(competitorId);
 
         if (comp.Competitors.Any(x => x.Id == competitorId))
-            throw new Exception($"Competitor with id {competitorId} already assigned to this event");
+            throw new CompetitorAssignedToEventException(
+                $"Competitor with id {competitorId} already assigned to this event");
 
         comp.Competitors.Add(usr);
         await _context.SaveChangesAsync();
@@ -136,7 +137,7 @@ public class EventService : IEventService
         var seg = await _context.GetSegment(segmentId) ?? await TryPullSegment(segmentId);
         return seg;
     }
-    
+
     private async Task<Segment> TryPullSegment(int segmentId)
     {
         var segment = await _segmentClient.PullSegment(segmentId);
