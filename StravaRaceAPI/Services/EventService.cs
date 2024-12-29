@@ -136,7 +136,7 @@ public class EventService : IEventService
         var seg = await _context.GetSegment(segmentId) ?? await TryPullSegment(segmentId);
         return seg;
     }
-
+    
     private async Task<Segment> TryPullSegment(int segmentId)
     {
         var segment = await _segmentClient.PullSegment(segmentId);
