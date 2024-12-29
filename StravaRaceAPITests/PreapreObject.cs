@@ -26,19 +26,22 @@ public static class PreapreObject
         SegmentIds = new List<int> { 10, 100 }
     };
 
-    public static User CreateUser => new()
+    public static User CreateUser(int id)
     {
-        Id = 1,
-        FirstName = "FirstName",
-        LastName = "LastName",
-        Username = "Username",
-        Email = "Email",
-        Token = new Token
+        return new User
         {
-            UserId = 1,
-            ExpirationOfToken = DateTime.Now.AddHours(2),
-            AccessToken = "AccessToken",
-            RefreshToken = "RefreshToken"
-        }
-    };
+            Id = id,
+            FirstName = "FirstName",
+            LastName = "LastName",
+            Username = "Username",
+            Email = "Email",
+            Token = new Token
+            {
+                UserId = id,
+                ExpirationOfToken = DateTime.Now.AddHours(2),
+                AccessToken = "AccessToken",
+                RefreshToken = "RefreshToken"
+            }
+        };
+    }
 }
