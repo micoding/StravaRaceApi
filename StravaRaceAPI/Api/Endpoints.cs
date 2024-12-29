@@ -14,7 +14,8 @@ public static class Endpoints
     public const string SegmentsStarred = $"{Segment}/starred";
 
     private const string RefreshAccessToken = StravaMain + "/oauth/token";
-    public const string AuthorizeCode = ApiMainToken + "/oauth/authorize";
+    public const string AuthorizeRedirectCode = ApiMainToken + "/oauth/authorize";
+    public const string AuthorizeCode = StravaMain + "/oauth/authorize";
 
     private const string RedirectUrl = "http://localhost";
 
@@ -27,6 +28,6 @@ public static class Endpoints
     public static string GetRefreshAccessToken(this ApiConfiguration config, Token token)
     {
         return
-            $"{RefreshAccessToken}?client_id={config.ClientId}&client_secret={config.ClientSecret}&refresh_token={token.RefreshToken}&grant_type=refresh_token";
+            $"{AuthorizeRedirectCode}?client_id={config.ClientId}&client_secret={config.ClientSecret}&refresh_token={token.RefreshToken}&grant_type=refresh_token";
     }
 }

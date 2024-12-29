@@ -1,10 +1,11 @@
 using System.Text;
-using System.Web;
+using System.Text.Json;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using StravaRaceAPI;
 using StravaRaceAPI.Api;
 using StravaRaceAPI.Api.Clients;
@@ -12,6 +13,7 @@ using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
 using StravaRaceAPI.Models;
 using StravaRaceAPI.Services;
+using Swashbuckle.AspNetCore.Filters;
 using TokenHandler = StravaRaceAPI.Api.TokenHandler;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,7 +29,10 @@ builder.Services.AddAutoMapper(typeof(StravaMappingProfile));
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
+builder.Services.AddScoped<ISegmentClient, SegmentClient>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("HttpClient");
 
 var authenticationOptions = new AuthenticationOptions();
 builder.Configuration.GetSection(nameof(AuthenticationOptions)).Bind(authenticationOptions);
@@ -45,7 +50,7 @@ builder.Services.AddAuthentication(opt =>
     {
         ValidIssuer = authenticationOptions.JwtIssuer,
         ValidAudience = authenticationOptions.JwtIssuer,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationOptions.JwtKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationOptions.JwtKey))
     };
 });
 
@@ -56,6 +61,18 @@ builder.Services.AddDbContext<ApiDBContext>(options =>
 {
     options.UseMySql(builder.Configuration.GetConnectionString("StravaRaceConnectionString"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("StravaRaceConnectionString")));
+});
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("JWT", new OpenApiSecurityScheme
+    {
+        Description = "Standard Authorization header using the Bearer scheme.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey
+    });
+    options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
 var app = builder.Build();
@@ -98,37 +115,45 @@ app.MapPost("event", async (ApiDBContext db, [FromBody] CreateEventDTO dto, IEve
         return Results.Ok(newEvent);
     })
     .Produces<SegmentDTO>()
-    .Produces(StatusCodes.Status404NotFound);
-
-app.MapGet("connectWithStrava", async ([FromBody]HttpClient client, IMapper mapper, IUserService service) =>
-    {
-        var redirect = await client.GetAsync(Endpoints.AuthorizeCode);
-        if (!redirect.IsSuccessStatusCode) throw new ApiCommunicationError("Could not connect to strava");
-
-        var code = HttpUtility.ParseQueryString(redirect.Headers.Location.AbsoluteUri).Get("code");
-
-        if (code is null) throw new ApiCommunicationError("Invalid code");
-
-        var response = await client.PostAsync(apiConfiguration.GetAuthorizationCode(), null);
-
-        if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Failed to get token: {response.StatusCode}");
-
-        var userDto = await response.Content.ReadFromJsonAsync<AthleteDTO>();
-        var tokenDto = await response.Content.ReadFromJsonAsync<TokenDTO>();
-        if (userDto is null || tokenDto is null) throw new ApiCommunicationError("Invalid response");
-
-        var user = mapper.Map<User>(userDto);
-        var tokenApi = mapper.Map<Token>(tokenDto);
-
-        user.Token = tokenApi;
-
-        var token = await service.SignInWithStrava(user);
-
-        return Results.Ok(token);
-    })
     .Produces(StatusCodes.Status404NotFound)
     .RequireAuthorization("LoggedIn");
+
+app.MapPost("connectWithStrava",
+        async ([FromBody] object response, IHttpClientFactory clientFactory, IMapper mapper, IUserService service) =>
+        {
+            // var client = clientFactory.CreateClient("HttpClient");
+            //
+            // var redirect = await client.GetAsync(ApiConfiguration.Current.GetAuthorizationCode());
+            // if (!redirect.IsSuccessStatusCode) throw new ApiCommunicationError("Could not connect to strava");
+            //
+            // var code = HttpUtility.ParseQueryString(redirect.Headers.Location.AbsoluteUri).Get("code");
+            //
+            // if (code is null) throw new ApiCommunicationError("Invalid code");
+
+            // var response = await client.PostAsync(apiConfiguration.GetAuthorizationCode(), null);
+
+            // if (!response.IsSuccessStatusCode)
+            //     throw new HttpRequestException($"Failed to get token: {response.StatusCode}");
+            //
+            // var userDto = await response.Content.ReadFromJsonAsync<AthleteDTO>();
+            // var tokenDto = await response.Content.ReadFromJsonAsync<TokenDTO>();
+
+            //var des = JsonSerializer.Deserialize<AthleteDTO>(response.ToString());
+            var output = JsonSerializer.Deserialize<ConnnectWithStravaDTO>(response.ToString() ?? string.Empty);
+            var userDto = output?.athlete;
+            var tokenDto = JsonSerializer.Deserialize<TokenDTO>(response.ToString() ?? string.Empty);
+            if (userDto is null || tokenDto is null) throw new ApiCommunicationError("Invalid response");
+
+            var user = mapper.Map<User>(userDto);
+            var tokenApi = mapper.Map<Token>(tokenDto);
+
+            user.Token = tokenApi;
+
+            var token = await service.SignInWithStrava(user);
+
+            return Results.Ok(token);
+        })
+    .Produces(StatusCodes.Status404NotFound);
 
 app.UseAuthentication();
 app.UseAuthorization();

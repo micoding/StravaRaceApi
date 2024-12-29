@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using StravaRaceAPI.Api.Clients;
 using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
 
@@ -38,23 +37,6 @@ public static class DbContextExtensions
         var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId);
         return seg;
     }
-
-    // public static async Task<List<Segment>> TryGetSegments(this ApiDBContext context, List<int> segmentId)
-    // {
-    //     var newSegments = new List<Segment>();
-    //     foreach (var segmentId in segmentId)
-    //     {
-    //         var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId);
-    //         if (seg is null)
-    //             throw new NotFoundException(ErrorMessages.EventNotFoundMessage(segmentId));
-    //     }
-    //
-    //     var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId);
-    //     if (seg is null)
-    //         throw new NotFoundException(ErrorMessages.EventNotFoundMessage(segmentId));
-    //     return seg;
-    // }
-    
 
     public static async Task<bool> UsersExist(this ApiDBContext context, List<int> userIds)
     {

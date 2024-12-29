@@ -1,6 +1,5 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using StravaRaceAPI.Api;
 using StravaRaceAPI.Api.Clients;
 using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
@@ -8,7 +7,7 @@ using StravaRaceAPI.Models;
 
 namespace StravaRaceAPI.Services;
 
-internal interface IEventService
+public interface IEventService
 {
     Task<Event> CreateEvent(CreateEventDTO eventDto);
     Task<List<Event>> GetAllEvents();
@@ -23,33 +22,16 @@ public class EventService : IEventService
 {
     private readonly ApiDBContext _context;
     private readonly IMapper _mapper;
+    private readonly ISegmentClient _segmentClient;
     private readonly IUserContextService _userContextService;
 
-    public EventService(ApiDBContext context, IMapper mapper, IUserContextService userContextService)
+    public EventService(ApiDBContext context, IMapper mapper, IUserContextService userContextService,
+        ISegmentClient segmentClient)
     {
         _context = context;
         _mapper = mapper;
         _userContextService = userContextService;
-    }
-    
-    public async Task<Segment> TryGetSegment(int segmentId)
-    {
-        var seg = await _context.GetSegment(segmentId) ?? await TryPullSegment(segmentId);
-        return seg;
-    }
-    
-    public async Task<Segment> TryPullSegment(int segmentId)
-    {
-        var user = await _context.TryGetUser(_userContextService.GetUserId ?? default(int));
-        
-        var segmentClient = new SegmentClient(new TokenHandler(user.Token, _context));
-
-        var segment = await segmentClient.PullSegment(segmentId);
-        
-        await _context.Segments.AddAsync(segment);
-        await _context.SaveChangesAsync();
-        
-        return segment;
+        _segmentClient = segmentClient;
     }
 
     public async Task<Event> CreateEvent(CreateEventDTO eventDto)
@@ -58,7 +40,7 @@ public class EventService : IEventService
 
         newEvent.Creator = await _context.TryGetUser(eventDto.CreatorId);
 
-        newEvent.Segments.Add(await TryGetSegment(eventDto.SegmentIds.FirstOrDefault()));
+        newEvent.Segments.Add(await ResolveSegment(eventDto.SegmentIds.FirstOrDefault()));
 
         await _context.Events.AddAsync(newEvent);
         await _context.SaveChangesAsync();
@@ -134,7 +116,7 @@ public class EventService : IEventService
         var newResult = new Result();
         var usr = await _context.TryGetUser(userId);
         var ev = await _context.TryGetEvent(eventId);
-        var seg = await TryGetSegment(segmentId);
+        var seg = await ResolveSegment(segmentId);
 
         newResult.Event = ev;
         newResult.Segment = seg;
@@ -147,5 +129,21 @@ public class EventService : IEventService
 
         await _context.Results.AddAsync(newResult);
         await _context.SaveChangesAsync();
+    }
+
+    private async Task<Segment> ResolveSegment(int segmentId)
+    {
+        var seg = await _context.GetSegment(segmentId) ?? await TryPullSegment(segmentId);
+        return seg;
+    }
+
+    private async Task<Segment> TryPullSegment(int segmentId)
+    {
+        var segment = await _segmentClient.PullSegment(segmentId);
+
+        await _context.Segments.AddAsync(segment);
+        await _context.SaveChangesAsync();
+
+        return segment;
     }
 }
