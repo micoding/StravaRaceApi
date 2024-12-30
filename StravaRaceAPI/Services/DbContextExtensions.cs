@@ -42,4 +42,17 @@ public static class DbContextExtensions
     {
         return await Task.FromResult(userIds.All(id => context.Users.Any(u => u.Id == id)));
     }
+    
+    public static void DetachLocal<T>(this DbContext context, T t, int detachId) 
+        where T : class, IIdentifier
+    {
+        var local = context.Set<T>()
+            .Local
+            .FirstOrDefault(entry => entry.Id.Equals(detachId));
+        if (local == null)
+        {
+            context.Entry(local).State = EntityState.Detached;
+        }
+        context.Entry(t).State = EntityState.Modified;
+    }
 }

@@ -1,6 +1,6 @@
 namespace StravaRaceAPI.Entities;
 
-public class User
+public class User: IIdentifier
 {
     public int Id { get; set; }
     public string Username { get; set; }
