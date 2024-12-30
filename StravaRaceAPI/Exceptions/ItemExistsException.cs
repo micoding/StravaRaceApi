@@ -2,9 +2,9 @@ using System.Net;
 
 namespace StravaRaceAPI.Exceptions;
 
-public class ItemExists : ExceptionWithStatusCode
+public class ItemExistsException : ExceptionWithStatusCode
 {
-    public ItemExists(string message) : base(message)
+    public ItemExistsException(string message) : base(message)
     {
     }
 

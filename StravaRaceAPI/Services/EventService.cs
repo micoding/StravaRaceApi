@@ -126,7 +126,7 @@ public class EventService : IEventService
 
         if (await _context.Results.AnyAsync(r =>
                 r.EventId == newResult.EventId && r.SegmentId == newResult.SegmentId && r.UserId == newResult.UserId))
-            throw new ItemExists("Result already exists");
+            throw new ItemExistsException("Result already exists");
 
         await _context.Results.AddAsync(newResult);
         await _context.SaveChangesAsync();

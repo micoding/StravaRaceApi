@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using StravaRaceAPI.Entities;
+using StravaRaceAPI.Exceptions;
 using StravaRaceAPI.Models;
+using StravaRaceAPI.Services;
 
 namespace StravaRaceAPI.Api;
 
@@ -13,13 +16,21 @@ public class TokenHandler : ITokenHandler
     private readonly ApiDBContext _context;
     private readonly Token _token;
 
-    public TokenHandler(Token token, ApiDBContext context)
+    public TokenHandler(IUserContextService userService, ApiDBContext context)
     {
-        _token = token;
         _context = context;
+        
+        var user = _context.Users.Include(u => u.Token).SingleOrDefault(u => u.Id == userService.GetUserId);
+        var token = user?.Token;
+        _token = token ?? throw new TokenNotFoundException($"Token of the user: {userService.GetUserId} not found!");
+        
         PrepareToken().Wait();
     }
 
+    /// <summary>
+    /// Gets accessToken.
+    /// </summary>
+    /// <returns>JWT access token.</returns>
     public string GetAccessToken()
     {
         Task.Run(PrepareToken().Wait);

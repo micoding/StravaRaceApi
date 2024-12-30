@@ -43,7 +43,10 @@ public class UserService : IUserService
 
     public async Task<string> Refresh(User user)
     {
-        _context.Users.Update(user);
+        //_context.DetachLocal(user, user.Id);
+        _context.ChangeTracker.Clear();
+        _context.Users.Attach(user);
+        _context.Tokens.Update(user.Token);
         await _context.SaveChangesAsync();
 
         return GenerateJwtToken(user);

@@ -14,9 +14,18 @@ public class StravaMappingProfile : Profile
 
             return dest;
         });
+        
+        CreateMap<Sex, string>().ConvertUsing((src, dest) =>
+        {
+            dest = src == Sex.Male ? "m" : "f";
+            return dest;
+        });
 
         CreateMap<AthleteDTO, User>()
-            .ForMember(x => x.Gender, m => m.MapFrom(x => x.Sex));
+            .ForMember(x => x.Gender, m => m.MapFrom(x => x.Sex))
+            .ReverseMap().ForMember(x => x.Sex, opt => opt.MapFrom(x => x.Gender));
+
+        CreateMap<Event, ShowEventDTO>();
 
         CreateMap<CreateEventDTO, Event>();
 

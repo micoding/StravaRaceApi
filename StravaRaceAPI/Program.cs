@@ -1,9 +1,12 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NLog;
@@ -11,8 +14,10 @@ using NLog.Web;
 using StravaRaceAPI;
 using StravaRaceAPI.Api;
 using StravaRaceAPI.Api.Clients;
+using StravaRaceAPI.Authorization;
 using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
+using StravaRaceAPI.Middlewares;
 using StravaRaceAPI.Models;
 using StravaRaceAPI.Services;
 using Swashbuckle.AspNetCore.Filters;
@@ -23,6 +28,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+
 var apiConfiguration = new ApiConfiguration();
 ApiConfiguration.Current = apiConfiguration;
 builder.Configuration.GetSection(nameof(ApiConfiguration)).Bind(apiConfiguration);
@@ -32,6 +40,10 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 builder.Services.AddScoped<ISegmentClient, SegmentClient>();
+builder.Services.AddScoped<IAthleteClient, AthleteClient>();
+builder.Services.AddScoped<ErrorHandlingMiddleware>();
+
+builder.Services.AddScoped<ITokenHandler, TokenHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("HttpClient");
@@ -58,7 +70,6 @@ builder.Services.AddAuthentication(opt =>
 
 builder.Services.AddAuthorizationBuilder().AddPolicy("LoggedIn", policy => policy.RequireAuthenticatedUser());
 
-
 builder.Services.AddDbContext<ApiDBContext>(options =>
 {
     options.UseMySql(builder.Configuration.GetConnectionString("StravaRaceConnectionString"),
@@ -83,68 +94,53 @@ builder.Host.UseNLog();
 
 var app = builder.Build();
 
-app.MapGet("user/{id:int}", async (ApiDBContext db, int id) =>
+app.MapGet("user/{id:int}", async (ApiDBContext db, int id, IAthleteClient athleteClient) =>
     {
         var user = await db.Users.Include(x => x.Token).FirstOrDefaultAsync(x => x.Id == id);
         if (user is null)
             throw new NotFoundException($"User with id {id} not found");
 
-        var ac = new AthleteClient(new TokenHandler(user.Token, db));
-
-        //var athlete = await ac.GetAthleteAsync();
+        var athlete = await athleteClient.GetAthleteAsync();
+        return athlete;
     })
     .Produces<AthleteDTO>()
-    .Produces(StatusCodes.Status404NotFound);
+    .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status500InternalServerError);
 
-app.MapGet("user/{id:int}/starred/", async (ApiDBContext db, int id) =>
+app.MapGet("user/starred/", async (ApiDBContext db, ISegmentClient segmentClient, IUserContextService userContext) =>
     {
+        var id = userContext.GetUserId;
         var user = await db.Users.Include(x => x.Token).FirstOrDefaultAsync(x => x.Id == id);
         if (user is null)
             throw new NotFoundException($"User with id {id} not found");
 
-        var ac = new SegmentClient(new TokenHandler(user.Token, db));
-
-        var starred = await ac.GetStarredSegmentsAsync();
+        var starred = await segmentClient.GetStarredSegmentsAsync();
         return Results.Ok(starred);
     })
     .Produces<SegmentDTO>()
-    .Produces(StatusCodes.Status404NotFound);
+    .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status500InternalServerError)
+    .RequireAuthorization("LoggedIn");
 
-app.MapPost("event", async (ApiDBContext db, [FromBody] CreateEventDTO dto, IEventService service) =>
+app.MapPost("event", async (ApiDBContext db, [FromBody] CreateEventDTO dto, IEventService service, IMapper map) =>
     {
         var user = await db.Users.Include(x => x.Token).FirstOrDefaultAsync(x => x.Id == dto.CreatorId);
         if (user is null)
             throw new NotFoundException($"User with id {dto.CreatorId} not found");
 
         var newEvent = await service.CreateEvent(dto);
+        var eventToShow = map.Map<ShowEventDTO>(newEvent);
 
-        return Results.Ok(newEvent);
+        return Results.Ok(eventToShow);
     })
     .Produces<SegmentDTO>()
     .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status500InternalServerError)
     .RequireAuthorization("LoggedIn");
 
 app.MapPost("connectWithStrava",
         async ([FromBody] object response, IHttpClientFactory clientFactory, IMapper mapper, IUserService service) =>
         {
-            // var client = clientFactory.CreateClient("HttpClient");
-            //
-            // var redirect = await client.GetAsync(ApiConfiguration.Current.GetAuthorizationCode());
-            // if (!redirect.IsSuccessStatusCode) throw new ApiCommunicationError("Could not connect to strava");
-            //
-            // var code = HttpUtility.ParseQueryString(redirect.Headers.Location.AbsoluteUri).Get("code");
-            //
-            // if (code is null) throw new ApiCommunicationError("Invalid code");
-
-            // var response = await client.PostAsync(apiConfiguration.GetAuthorizationCode(), null);
-
-            // if (!response.IsSuccessStatusCode)
-            //     throw new HttpRequestException($"Failed to get token: {response.StatusCode}");
-            //
-            // var userDto = await response.Content.ReadFromJsonAsync<AthleteDTO>();
-            // var tokenDto = await response.Content.ReadFromJsonAsync<TokenDTO>();
-
-            //var des = JsonSerializer.Deserialize<AthleteDTO>(response.ToString());
             var output = JsonSerializer.Deserialize<ConnnectWithStravaDTO>(response.ToString() ?? string.Empty);
             var userDto = output?.athlete;
             var tokenDto = JsonSerializer.Deserialize<TokenDTO>(response.ToString() ?? string.Empty);
@@ -153,6 +149,7 @@ app.MapPost("connectWithStrava",
             var user = mapper.Map<User>(userDto);
             var tokenApi = mapper.Map<Token>(tokenDto);
 
+            tokenApi.User = user;
             user.Token = tokenApi;
 
             var token = await service.SignInWithStrava(user);
@@ -161,6 +158,7 @@ app.MapPost("connectWithStrava",
         })
     .Produces(StatusCodes.Status404NotFound);
 
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
