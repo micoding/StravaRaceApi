@@ -11,10 +11,9 @@ public class StravaMappingProfile : Profile
         CreateMap<string, Sex>().ConvertUsing((src, dest) =>
         {
             dest = src.ToLower() == "m" ? Sex.Male : Sex.Female;
-
             return dest;
         });
-        
+
         CreateMap<Sex, string>().ConvertUsing((src, dest) =>
         {
             dest = src == Sex.Male ? "m" : "f";
@@ -23,7 +22,12 @@ public class StravaMappingProfile : Profile
 
         CreateMap<AthleteDTO, User>()
             .ForMember(x => x.Gender, m => m.MapFrom(x => x.Sex))
-            .ReverseMap().ForMember(x => x.Sex, opt => opt.MapFrom(x => x.Gender));
+            .ForMember(x => x.ProfilePictureUrl, opt => opt.MapFrom(x => x.PhotoUrl))
+            .ReverseMap()
+            .ForMember(x => x.Sex, opt => opt.MapFrom(x => x.Gender))
+            .ForMember(x => x.PhotoUrl, opt => opt.MapFrom(x => x.ProfilePictureUrl));
+
+        CreateMap<Segment, ShowEventDTO>();
 
         CreateMap<Event, ShowEventDTO>();
 

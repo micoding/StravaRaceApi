@@ -35,6 +35,7 @@ public static class PreapreObject
             LastName = "LastName",
             Username = "Username",
             Email = "Email",
+            ProfilePictureUrl = "ProfilePictureUrl",
             Token = new Token
             {
                 UserId = id,

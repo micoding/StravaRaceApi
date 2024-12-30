@@ -10,7 +10,6 @@ public interface IAthleteClient
 
 public class AthleteClient : StravaApiClient, IAthleteClient
 {
-    
     public AthleteClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger) : base(tokenHandler, logger)
     {
     }
@@ -25,11 +24,12 @@ public class AthleteClient : StravaApiClient, IAthleteClient
     {
         var response = await HttpClient.GetAsync(Endpoints.Athlete);
         if (!response.IsSuccessStatusCode) throw new ApiCommunicationError("Error calling get athlete.");
-        
-        var user = await response.Content.ReadFromJsonAsync<AthleteDTO>() ?? throw new CanNotReadException("Athlete DTO not found.");
-        
+
+        var user = await response.Content.ReadFromJsonAsync<AthleteDTO>() ??
+                   throw new CanNotReadException("Athlete DTO not found.");
+
         Logger.LogInformation(await response.Content.ReadAsStringAsync());
-        
+
         return user;
     }
 }

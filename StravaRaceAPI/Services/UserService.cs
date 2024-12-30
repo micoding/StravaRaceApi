@@ -43,7 +43,6 @@ public class UserService : IUserService
 
     public async Task<string> Refresh(User user)
     {
-        //_context.DetachLocal(user, user.Id);
         _context.ChangeTracker.Clear();
         _context.Users.Attach(user);
         _context.Tokens.Update(user.Token);
