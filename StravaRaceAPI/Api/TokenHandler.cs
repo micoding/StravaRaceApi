@@ -3,7 +3,12 @@ using StravaRaceAPI.Models;
 
 namespace StravaRaceAPI.Api;
 
-public class TokenHandler
+public interface ITokenHandler
+{
+    string GetAccessToken();
+}
+
+public class TokenHandler : ITokenHandler
 {
     private readonly ApiDBContext _context;
     private readonly Token _token;
@@ -21,7 +26,7 @@ public class TokenHandler
         return _token.AccessToken;
     }
 
-    public async Task PrepareToken()
+    private async Task PrepareToken()
     {
         if (string.IsNullOrEmpty(_token.AccessToken))
             GetNewToken();
@@ -32,12 +37,12 @@ public class TokenHandler
         }
     }
 
-    public bool IsValid()
+    private bool IsValid()
     {
         return _token.ExpirationOfToken - TimeSpan.FromSeconds(10) > DateTimeOffset.UtcNow;
     }
 
-    public async Task Refresh()
+    private async Task Refresh()
     {
         var tmpHttpClient = new HttpClient();
         tmpHttpClient.BaseAddress = new Uri(ApiConfiguration.Current.GetRefreshAccessToken(_token));
@@ -55,7 +60,7 @@ public class TokenHandler
         _token.ExpirationOfToken = DateTime.UnixEpoch.AddSeconds(tokenDto.ExpiresAt);
     }
 
-    public void GetNewToken()
+    private static void GetNewToken()
     {
         var tmpHttpClient = new HttpClient();
         tmpHttpClient.GetAsync(ApiConfiguration.Current.GetAuthorizationCode());
