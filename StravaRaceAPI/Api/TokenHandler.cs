@@ -19,16 +19,16 @@ public class TokenHandler : ITokenHandler
     public TokenHandler(IUserContextService userService, ApiDBContext context)
     {
         _context = context;
-        
+
         var user = _context.Users.Include(u => u.Token).SingleOrDefault(u => u.Id == userService.GetUserId);
         var token = user?.Token;
         _token = token ?? throw new TokenNotFoundException($"Token of the user: {userService.GetUserId} not found!");
-        
+
         PrepareToken().Wait();
     }
 
     /// <summary>
-    /// Gets accessToken.
+    ///     Gets accessToken.
     /// </summary>
     /// <returns>JWT access token.</returns>
     public string GetAccessToken()

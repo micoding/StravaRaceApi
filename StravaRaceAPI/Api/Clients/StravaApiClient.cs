@@ -5,11 +5,11 @@ namespace StravaRaceAPI.Api.Clients;
 public abstract class StravaApiClient
 {
     protected readonly HttpClient HttpClient;
-    protected readonly ITokenHandler TokenHandler;
     protected readonly ILogger<StravaApiClient> Logger;
-    
+    protected readonly ITokenHandler TokenHandler;
+
     /// <summary>
-    /// Strava API Client base class.
+    ///     Strava API Client base class.
     /// </summary>
     /// <param name="tokenHandler">User TokenHandler to be used for the Strava API requests.</param>
     /// <param name="logger">Logger</param>

@@ -3,10 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NLog;
@@ -14,13 +12,13 @@ using NLog.Web;
 using StravaRaceAPI;
 using StravaRaceAPI.Api;
 using StravaRaceAPI.Api.Clients;
-using StravaRaceAPI.Authorization;
 using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
 using StravaRaceAPI.Middlewares;
 using StravaRaceAPI.Models;
 using StravaRaceAPI.Services;
 using Swashbuckle.AspNetCore.Filters;
+using JsonOptions = Microsoft.AspNetCore.Http.Json.JsonOptions;
 using TokenHandler = StravaRaceAPI.Api.TokenHandler;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +26,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+builder.Services.Configure<JsonOptions>(options =>
     options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
 var apiConfiguration = new ApiConfiguration();
@@ -133,7 +131,7 @@ app.MapPost("event", async (ApiDBContext db, [FromBody] CreateEventDTO dto, IEve
 
         return Results.Ok(eventToShow);
     })
-    .Produces<SegmentDTO>()
+    .Produces<ShowEventDTO>()
     .Produces(StatusCodes.Status404NotFound)
     .Produces(StatusCodes.Status500InternalServerError)
     .RequireAuthorization("LoggedIn");
