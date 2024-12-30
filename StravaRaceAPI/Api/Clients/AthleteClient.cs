@@ -15,7 +15,7 @@ public class AthleteClient : StravaApiClient
     public async Task<AthleteDTO> GetAthleteAsync()
     {
         AthleteDTO user = null;
-        var response = await _httpClient.GetAsync(Endpoints.Athlete);
+        var response = await HttpClient.GetAsync(Endpoints.Athlete);
         if (response.IsSuccessStatusCode)
         {
             user = await response.Content.ReadFromJsonAsync<AthleteDTO>();

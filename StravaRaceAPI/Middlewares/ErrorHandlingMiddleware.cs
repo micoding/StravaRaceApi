@@ -2,8 +2,13 @@ using StravaRaceAPI.Exceptions;
 
 namespace StravaRaceAPI.Middlewares;
 
-public class ErrrorHandlingMiddleware : IMiddleware
+public class ErrorHandlingMiddleware : IMiddleware
 {
+    private readonly Logger<ErrorHandlingMiddleware> _logger;
+    public ErrorHandlingMiddleware(Logger<ErrorHandlingMiddleware> logger)
+    {
+        _logger = logger;
+    }
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         try
@@ -14,11 +19,12 @@ public class ErrrorHandlingMiddleware : IMiddleware
         {
             context.Response.StatusCode = (int)e.StatusCode;
             await context.Response.WriteAsync(e.Message);
+            _logger.LogError(e, e.Message);
             throw;
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, e.Message);
             throw;
         }
     }
