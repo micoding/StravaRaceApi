@@ -14,7 +14,8 @@ public abstract class StravaApiClient
     /// <param name="tokenHandler">User TokenHandler to be used for the Strava API requests.</param>
     /// <param name="logger">Logger</param>
     /// <param name="httpClient">HttpClient</param>
-    protected StravaApiClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger, IHttpClientFactory httpClient)
+    protected StravaApiClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger,
+        IHttpClientFactory httpClient)
     {
         Logger = logger;
         TokenHandler = tokenHandler;

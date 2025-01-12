@@ -139,7 +139,8 @@ public class TestEventService
         const int eventId = 1;
         const int competitorId = 2;
 
-        var ex = Assert.Throws<AggregateException>(() => _serviceUnderTest.AddCompetitors(eventId, [competitorId]).Wait());
+        var ex = Assert.Throws<AggregateException>(() =>
+            _serviceUnderTest.AddCompetitors(eventId, [competitorId]).Wait());
         Assert.That(ex.InnerException, Is.TypeOf<NotFoundException>());
     }
 
@@ -183,7 +184,8 @@ public class TestEventService
         createdEvent.Competitors.Add(_context.Users.First(x => x.Id == competitorId));
         await _context.SaveChangesAsync();
 
-        var ex = Assert.Throws<AggregateException>(() => _serviceUnderTest.AddCompetitors(eventId, [competitorId]).Wait());
+        var ex = Assert.Throws<AggregateException>(() =>
+            _serviceUnderTest.AddCompetitors(eventId, [competitorId]).Wait());
         Assert.That(ex.InnerException, Is.TypeOf<CompetitorAssignedToEventException>());
     }
 }
