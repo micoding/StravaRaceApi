@@ -23,7 +23,7 @@ public static class PreapreObject
         EndDate = DateTime.Now + TimeSpan.FromDays(1),
         CreationDate = DateTime.Now,
         CreatorId = 1,
-        SegmentIds = new List<int> { 10, 100 }
+        SegmentIds = new List<ulong> { 10, 100 }
     };
 
     public static User CreateUser(int id)

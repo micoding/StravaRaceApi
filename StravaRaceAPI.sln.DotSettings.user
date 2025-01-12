@@ -51,7 +51,7 @@
     &lt;TestId&gt;NUnit3x::627B76F3-6F89-457F-8480-6E8461D6BE84::net7.0::StravaRaceAPITests.TestEventService.GetAllEvents_ReturnsAllEvents&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7c0e4c6d_002Df2ce_002D4b7a_002Da6c8_002D4c7aa1ad140b/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="CreateEvent_CreatesEvent" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7c0e4c6d_002Df2ce_002D4b7a_002Da6c8_002D4c7aa1ad140b/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="CreateEvent_CreatesEvent" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Solution /&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=9faa8364_002Db6fb_002D44a3_002D85c0_002D34d5e5f97ce3/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="GetAllEvents_ReturnsAllEvents #3" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;

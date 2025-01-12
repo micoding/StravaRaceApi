@@ -30,7 +30,7 @@ public class AthleteClientTest : MockStravaAPI
     }
 
     [Test]
-    public async Task GetAthleteAsync_WhenCalled_ReturnsAthlete()
+    public void GetAthleteAsync_WhenCalled_ReturnsAthlete()
     {
         MockHttpClientFactory.Verify(cf => cf.CreateClient());
         MockHttpClientFactory.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(),

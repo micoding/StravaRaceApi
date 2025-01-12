@@ -12,7 +12,7 @@ namespace StravaRaceAPI.Migrations
 {
     [DbContext(typeof(ApiDBContext))]
     [Migration("20241127174719_init")]
-    partial class init
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
