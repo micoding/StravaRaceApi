@@ -65,7 +65,7 @@ public class EventService : IEventService
     {
         var comp = await _context.TryGetEvent(eventId);
 
-        var notExist = competitorIds.Where(x => _context.Users.Any(usr => usr.Id != x));
+        var notExist = competitorIds.Where(x => _context.Users.All(usr => usr.Id != x));
 
         if (notExist.Any())
             throw new NotFoundException("Given users not found");
