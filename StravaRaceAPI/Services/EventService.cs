@@ -15,6 +15,8 @@ public interface IEventService
     Task AddCompetitors(ulong eventId, List<int> competitorIds);
     Task AddSegments(ulong eventId, List<ulong> segmentIds);
     Task AddResult(int userId, ulong eventId, ulong segmentId, uint time);
+    Task RemoveCompetitors(ulong eventId, List<int> competitorIds);
+    Task RemoveSegments(ulong eventId, List<ulong> segmentsIds);
 }
 
 public class EventService : IEventService
@@ -75,8 +77,9 @@ public class EventService : IEventService
         if (notEnrolled.Count == 0)
             throw new CompetitorAssignedToEventException("All competitors already assigned to this event");
 
-        var usersWithEvents = notEnrolled.Select(competitorId => new UserWithEvent { UserId = competitorId, EventId = eventId }).ToList();
-        
+        var usersWithEvents = notEnrolled
+            .Select(competitorId => new UserWithEvent { UserId = competitorId, EventId = eventId }).ToList();
+
         await _context.UsersWithEvents.AddRangeAsync(usersWithEvents);
         await _context.SaveChangesAsync();
     }
@@ -115,13 +118,45 @@ public class EventService : IEventService
         await _context.SaveChangesAsync();
     }
 
+    public async Task RemoveCompetitors(ulong eventId, List<int> competitorIds)
+    {
+        var comp = await _context.TryGetEvent(eventId);
+
+        var notExist = competitorIds.Where(x => _context.Users.All(usr => usr.Id != x));
+
+        if (notExist.Any())
+            throw new NotFoundException("Given users not found");
+
+        var toRemove = competitorIds.Where(x => comp.Competitors.All(c => c.Id == x)).ToList();
+
+        if (toRemove.Count == 0)
+            throw new NotFoundException("All competitors not assigned to this event");
+
+        var competitorsToRemove = await _context.UsersWithEvents.Where(x => toRemove.Contains(x.UserId)).ToListAsync();
+
+        _context.UsersWithEvents.RemoveRange(competitorsToRemove);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveSegments(ulong eventId, List<ulong> segmentsIds)
+    {
+        var comp = await _context.TryGetEvent(eventId);
+
+        var toRemove = segmentsIds.Where(x => comp.Segments.All(c => c.Id == x)).ToList();
+
+        if (toRemove.Count == 0)
+            throw new NotFoundException("All segments not assigned to this event");
+
+        var eventsToRemove = await _context.UsersWithEvents.Where(x => toRemove.Contains(x.EventId)).ToListAsync();
+
+        _context.UsersWithEvents.RemoveRange(eventsToRemove);
+        await _context.SaveChangesAsync();
+    }
+
     private async Task<List<Segment>> ResolveSegments(List<ulong> segmentsId)
     {
         var segments = new List<Segment>();
-        foreach (var id in segmentsId)
-        {
-            segments.Add(await _context.GetSegment(id) ?? await TryPullSegment(id));
-        }
+        foreach (var id in segmentsId) segments.Add(await _context.GetSegment(id) ?? await TryPullSegment(id));
         return segments;
     }
 

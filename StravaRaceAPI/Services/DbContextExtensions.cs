@@ -48,7 +48,7 @@ public static class DbContextExtensions
     /// <returns cref="Segment">Segment object.</returns>
     public static async Task<Segment?> GetSegment(this ApiDBContext context, ulong segmentId)
     {
-        var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId);
+        var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == segmentId);
         return seg;
     }
 

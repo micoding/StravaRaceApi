@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AutoMapper;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +14,7 @@ using StravaRaceAPI;
 using StravaRaceAPI.Api;
 using StravaRaceAPI.Api.Clients;
 using StravaRaceAPI.Authorization;
+using StravaRaceAPI.Endpoints;
 using StravaRaceAPI.Entities;
 using StravaRaceAPI.Exceptions;
 using StravaRaceAPI.Middlewares;
@@ -98,141 +98,11 @@ builder.Host.UseNLog();
 
 var app = builder.Build();
 
-app.MapGet("user/{id:int}", async (ApiDBContext db, int id, IAthleteClient athleteClient) =>
-    {
-        var user = await db.Users.Include(x => x.Token).FirstOrDefaultAsync(x => x.Id == id);
-        if (user is null)
-            throw new NotFoundException($"User with id {id} not found");
-
-        var athlete = await athleteClient.GetAthleteAsync();
-        return athlete;
-    })
-    .Produces<AthleteDTO>()
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization("LoggedIn");
-
-app.MapGet("events", async (IEventService service, IMapper map) =>
-    {
-        var eventsToReturn = await service.GetAllEvents();
-        var eventsDto = map.Map<List<AllEventDTO>>(eventsToReturn);
-        return Results.Ok(eventsDto);
-    })
-    .Produces<List<AllEventDTO>>()
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization("LoggedIn");
-
-app.MapGet("event/{id}", async (ulong id, IEventService service, IMapper map) =>
-    {
-        var eventToReturn = await service.GetEvent(id);
-        var eventDto = map.Map<ShowEventDTO>(eventToReturn);
-        return Results.Ok(eventDto);
-    })
-    .Produces<ShowEventDTO>()
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization("LoggedIn");
-
-app.MapGet("user/starred/", async (ApiDBContext db, ISegmentClient segmentClient, IUserContextService userContext) =>
-    {
-        var id = userContext.GetUserId;
-        var user = await db.Users.Include(x => x.Token).FirstOrDefaultAsync(x => x.Id == id);
-        if (user is null)
-            throw new NotFoundException($"User with id {id} not found");
-
-        var starred = await segmentClient.GetStarredSegmentsAsync();
-        return Results.Ok(starred);
-    })
-    .Produces<SegmentDTO>()
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization("LoggedIn");
-
-app.MapPost("event", async (ApiDBContext db, [FromBody] CreateEventDTO dto, IEventService service, IMapper map) =>
-    {
-        var user = await db.Users.Include(x => x.Token).FirstOrDefaultAsync(x => x.Id == dto.CreatorId);
-        if (user is null)
-            throw new NotFoundException($"User with id {dto.CreatorId} not found");
-
-        var newEvent = await service.CreateEvent(dto);
-        var eventToShow = map.Map<ShowEventDTO>(newEvent);
-
-        return Results.Ok(eventToShow);
-    })
-    .Produces<ShowEventDTO>()
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization("LoggedIn");
-
-app.MapPost("event/{id}/addCompetitors", async (ulong id, ApiDBContext db, [FromBody] ModifyEventCompetitorsDTO dto,
-        IEventService service, IMapper map, IAuthorizationService authService, IUserContextService userContext) =>
-    {
-        if (dto.Competitors.Count is 0)
-            throw new NotFoundException("No Competitor passed");
-
-        var eventToModify = await db.Events.FirstOrDefaultAsync(e => e.Id == id);
-        if (eventToModify is null) throw new NotFoundException($"Event with id {id} not found");
-
-        var authResult =
-            await authService.AuthorizeAsync(userContext.User, eventToModify, new EventAuthorRequirement());
-        if (!authResult.Succeeded) return Results.Unauthorized();
-
-        await service.AddCompetitors(id, dto.Competitors);
-
-        return Results.Ok();
-    })
-    .Produces<ShowEventDTO>()
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status401Unauthorized)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization("LoggedIn");
-
-app.MapPost("event/{id}/addSegments", async (ulong id, ApiDBContext db, [FromBody] ModifyEventSegmentsDTO dto,
-        IEventService service, IMapper map, IAuthorizationService authService, IUserContextService userContext) =>
-    {
-        if (dto.Segments.Count is 0)
-            throw new NotFoundException("No Segments passed");
-
-        var eventToModify = await db.Events.FirstOrDefaultAsync(e => e.Id == id);
-        if (eventToModify is null) throw new NotFoundException($"Event with id {id} not found");
-
-        var authResult =
-            await authService.AuthorizeAsync(userContext.User, eventToModify, new EventAuthorRequirement());
-        if (!authResult.Succeeded) return Results.Unauthorized();
-
-        await service.AddSegments(id, dto.Segments);
-
-        return Results.Ok();
-    })
-    .Produces<ShowEventDTO>()
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status401Unauthorized)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization("LoggedIn");
-
-app.MapPost("event/{id}/addResult", async (ulong id, ApiDBContext db, [FromBody] ResultDTO dto,
-        IEventService service, IMapper map, IAuthorizationService authService, IUserContextService userContext) =>
-    {
-        var eventToModify = await db.Events.Include(e => e.Competitors).FirstOrDefaultAsync(e => e.Id == id);
-        if (eventToModify is null) throw new NotFoundException($"Event with id {id} not found");
-        
-        var authResult =
-            await authService.AuthorizeAsync(userContext.User, eventToModify, new EventCompetitorRequirement());
-        if (!authResult.Succeeded) return Results.Unauthorized();
-        
-        await service.AddResult((int)userContext.GetUserId!, id, dto.SegmentId, dto.Time);
-
-        return Results.Ok();
-    })
-    .Produces<ShowEventDTO>()
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status401Unauthorized)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization("LoggedIn");
+app.MapEventEndpoints();
+app.MapUserEndpoints();
 
 app.MapPost("connectWithStrava",
-        async ([FromBody] object response, IHttpClientFactory clientFactory, IMapper mapper, IUserService service) =>
+        async ([FromBody] object response, IMapper mapper, IUserService service) =>
         {
             var output = JsonSerializer.Deserialize<ConnnectWithStravaDTO>(response.ToString() ?? string.Empty);
             var userDto = output?.athlete;
@@ -249,7 +119,8 @@ app.MapPost("connectWithStrava",
 
             return Results.Ok(token);
         })
-    .Produces(StatusCodes.Status404NotFound);
+    .Produces(StatusCodes.Status404NotFound)
+    .Produces(StatusCodes.Status500InternalServerError);
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseAuthentication();
