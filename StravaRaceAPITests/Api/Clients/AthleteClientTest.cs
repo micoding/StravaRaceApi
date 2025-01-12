@@ -1,3 +1,6 @@
+using System.Net;
+using Moq;
+using Moq.Protected;
 using StravaRaceAPI.Api.Clients;
 
 namespace StravaRaceAPITests.Api.Clients;
@@ -9,13 +12,28 @@ public class AthleteClientTest : MockStravaAPI
     [SetUp]
     public void Setup()
     {
-        _client = new AthleteClient(MockTokenHandler.Object, MockLogger.Object);
-    }
+        
+        var clientHandlerMock = new Mock<DelegatingHandler>();
+        clientHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK))
+            .Verifiable();
+        clientHandlerMock.As<IDisposable>().Setup(s => s.Dispose());
 
-    private AthleteClient _client;
+        var httpClient = new HttpClient(clientHandlerMock.Object);
+        
+        MockHttpClientFactory.Setup(cf => cf.CreateClient()).Returns(httpClient).Verifiable();
+        
+            
+        // MockHttpClientFactory.Setup(x => x.)
+        // _client = new AthleteClient(MockTokenHandler.Object, MockLogger.Object);
+    }
 
     [Test]
     public async Task GetAthleteAsync_WhenCalled_ReturnsAthlete()
     {
+        MockHttpClientFactory.Verify(cf => cf.CreateClient());
+        MockHttpClientFactory.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>());
     }
 }

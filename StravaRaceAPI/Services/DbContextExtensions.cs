@@ -13,12 +13,13 @@ public static class DbContextExtensions
     /// <param name="eventId">Event id to be obtained.</param>
     /// <returns>Event object not null.</returns>
     /// <exception cref="NotFoundException">When event not found.</exception>
-    public static async Task<Event> TryGetEvent(this ApiDBContext context, int eventId)
+    public static async Task<Event> TryGetEvent(this ApiDBContext context, ulong eventId)
     {
         var ev = await context.Events
             .Include(x => x.Competitors)
             .Include(x => x.Results)
-            .FirstOrDefaultAsync(x => x.Id == (ulong)eventId);
+            .Include(x => x.Segments)
+            .FirstOrDefaultAsync(x => x.Id == eventId);
         if (ev is null)
             throw new NotFoundException(ErrorMessages.EventNotFoundMessage(eventId));
         return ev;
@@ -45,7 +46,7 @@ public static class DbContextExtensions
     /// <param name="context">ApiDBContext</param>
     /// <param name="segmentId">Segment id.</param>
     /// <returns cref="Segment">Segment object.</returns>
-    public static async Task<Segment?> GetSegment(this ApiDBContext context, int segmentId)
+    public static async Task<Segment?> GetSegment(this ApiDBContext context, ulong segmentId)
     {
         var seg = await context.Segments.FirstOrDefaultAsync(x => x.Id == (ulong)segmentId);
         return seg;

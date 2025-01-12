@@ -11,11 +11,10 @@ public interface IEventService
 {
     Task<Event> CreateEvent(CreateEventDTO eventDto);
     Task<List<Event>> GetAllEvents();
-    Task<Event> GetEvent(int eventId);
-    Task AddCompetitor(int eventId, int competitorId);
-    Task AddCompetitors(int eventId, List<int> competitorIds);
-    Task AddSegments(int eventId, List<int> segmentIds);
-    Task AddResult(int userId, int eventId, int segmentId, uint time);
+    Task<Event> GetEvent(ulong eventId);
+    Task AddCompetitors(ulong eventId, List<int> competitorIds);
+    Task AddSegments(ulong eventId, List<ulong> segmentIds);
+    Task AddResult(int userId, ulong eventId, ulong segmentId, uint time);
 }
 
 public class EventService : IEventService
@@ -40,7 +39,7 @@ public class EventService : IEventService
 
         newEvent.Creator = await _context.TryGetUser(eventDto.CreatorId);
 
-        newEvent.Segments.Add(await ResolveSegment(eventDto.SegmentIds.FirstOrDefault()));
+        newEvent.Segments.AddRange(await ResolveSegments(eventDto.SegmentIds));
 
         await _context.Events.AddAsync(newEvent);
         await _context.SaveChangesAsync();
@@ -57,26 +56,12 @@ public class EventService : IEventService
         return events;
     }
 
-    public async Task<Event> GetEvent(int eventId)
+    public async Task<Event> GetEvent(ulong eventId)
     {
         return await _context.TryGetEvent(eventId);
     }
 
-    public async Task AddCompetitor(int eventId, int competitorId)
-    {
-        var comp = await _context.TryGetEvent(eventId);
-
-        var usr = await _context.TryGetUser(competitorId);
-
-        if (comp.Competitors.Any(x => x.Id == competitorId))
-            throw new CompetitorAssignedToEventException(
-                $"Competitor with id {competitorId} already assigned to this event");
-
-        comp.Competitors.Add(usr);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task AddCompetitors(int eventId, List<int> competitorIds)
+    public async Task AddCompetitors(ulong eventId, List<int> competitorIds)
     {
         var comp = await _context.TryGetEvent(eventId);
 
@@ -85,42 +70,40 @@ public class EventService : IEventService
         if (notExist.Any())
             throw new NotFoundException("Given users not found");
 
-        var notEnrolled = comp.Competitors.Where(x => !competitorIds.Contains(x.Id)).ToList();
+        var notEnrolled = competitorIds.Where(x => comp.Competitors.All(c => c.Id != x)).ToList();
 
-        if (notEnrolled.Any())
-            throw new Exception("All competitors already assigned to this event");
+        if (notEnrolled.Count == 0)
+            throw new CompetitorAssignedToEventException("All competitors already assigned to this event");
 
-        comp.Competitors.AddRange(notEnrolled);
+        var usersWithEvents = notEnrolled.Select(competitorId => new UserWithEvent { UserId = competitorId, EventId = eventId }).ToList();
+        
+        await _context.UsersWithEvents.AddRangeAsync(usersWithEvents);
         await _context.SaveChangesAsync();
     }
 
-    public async Task AddSegments(int eventId, List<int> segmentIds)
+    public async Task AddSegments(ulong eventId, List<ulong> segmentIds)
     {
-        var ev = await _context.TryGetEvent(eventId);
+        var comp = await _context.TryGetEvent(eventId);
 
-        var segmentsNonExist = segmentIds.Where(x => _context.Segments.All(seg => seg.Id != (ulong)x));
-        if (segmentsNonExist.Any())
-        {
-        }
+        var segmentsToAssign = await ResolveSegments(segmentIds);
 
-        var notEnrolled = ev.Segments.Where(x => segmentIds.TrueForAll(id => (ulong)id != x.Id)).ToList();
+        var notEnrolled = segmentsToAssign.Where(x => comp.Segments.TrueForAll(s => s.Id != x.Id)).ToList();
 
-        if (notEnrolled.Any())
-            throw new Exception("All competitors already assigned to this event");
+        if (notEnrolled.Count == 0) throw new Exception("All segments already assigned to this event");
 
-        ev.Segments.AddRange(notEnrolled);
+        comp.Segments.AddRange(notEnrolled);
         await _context.SaveChangesAsync();
     }
 
-    public async Task AddResult(int userId, int eventId, int segmentId, uint time)
+    public async Task AddResult(int userId, ulong eventId, ulong segmentId, uint time)
     {
         var newResult = new Result();
         var usr = await _context.TryGetUser(userId);
         var ev = await _context.TryGetEvent(eventId);
-        var seg = await ResolveSegment(segmentId);
+        var seg = await ResolveSegments([segmentId]);
 
         newResult.Event = ev;
-        newResult.Segment = seg;
+        newResult.Segment = seg.First();
         newResult.Time = time;
         newResult.User = usr;
 
@@ -132,13 +115,17 @@ public class EventService : IEventService
         await _context.SaveChangesAsync();
     }
 
-    private async Task<Segment> ResolveSegment(int segmentId)
+    private async Task<List<Segment>> ResolveSegments(List<ulong> segmentsId)
     {
-        var seg = await _context.GetSegment(segmentId) ?? await TryPullSegment(segmentId);
-        return seg;
+        var segments = new List<Segment>();
+        foreach (var id in segmentsId)
+        {
+            segments.Add(await _context.GetSegment(id) ?? await TryPullSegment(id));
+        }
+        return segments;
     }
 
-    private async Task<Segment> TryPullSegment(int segmentId)
+    private async Task<Segment> TryPullSegment(ulong segmentId)
     {
         var segment = await _segmentClient.PullSegment(segmentId);
 

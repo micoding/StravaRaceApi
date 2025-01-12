@@ -28,6 +28,6 @@ public static class Endpoints
     public static string GetRefreshAccessToken(this ApiConfiguration config, Token token)
     {
         return
-            $"{AuthorizeRedirectCode}?client_id={config.ClientId}&client_secret={config.ClientSecret}&refresh_token={token.RefreshToken}&grant_type=refresh_token";
+            $"{RefreshAccessToken}?client_id={config.ClientId}&client_secret={config.ClientSecret}&refresh_token={token.RefreshToken}&grant_type=refresh_token";
     }
 }

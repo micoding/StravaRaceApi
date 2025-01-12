@@ -7,12 +7,13 @@ namespace StravaRaceAPI.Api.Clients;
 public interface ISegmentClient
 {
     Task<List<SegmentDTO>> GetStarredSegmentsAsync();
-    Task<Segment> PullSegment(int segmentId);
+    Task<Segment> PullSegment(ulong segmentId);
 }
 
 public class SegmentClient : StravaApiClient, ISegmentClient
 {
-    public SegmentClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger) : base(tokenHandler, logger)
+    public SegmentClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger,
+        IHttpClientFactory httpClientFactory) : base(tokenHandler, logger, httpClientFactory)
     {
     }
 
@@ -43,7 +44,7 @@ public class SegmentClient : StravaApiClient, ISegmentClient
     /// <returns>Segment with given segmentId.</returns>
     /// <exception cref="ApiCommunicationError">When response fails.</exception>
     /// <exception cref="NotFoundException">When no segment found.</exception>
-    public async Task<Segment> PullSegment(int segmentId)
+    public async Task<Segment> PullSegment(ulong segmentId)
     {
         var response = await HttpClient.GetAsync(Endpoints.Segment + $"/{segmentId}");
         if (!response.IsSuccessStatusCode)

@@ -10,7 +10,7 @@ public class AthleteDTO
 
     [JsonPropertyName("lastname")] public string LastName { get; set; } = null!;
 
-    [JsonPropertyName("username")] public string Userame { get; set; } = null!;
+    [JsonPropertyName("username")] public string Username { get; set; } = null!;
 
     [JsonPropertyName("profile")] public string PhotoUrl { get; set; } = null!;
 
