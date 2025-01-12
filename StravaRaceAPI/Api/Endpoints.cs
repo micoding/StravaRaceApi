@@ -2,6 +2,9 @@ using StravaRaceAPI.Entities;
 
 namespace StravaRaceAPI.Api;
 
+/// <summary>
+///     Strava API Endpoints.
+/// </summary>
 public static class Endpoints
 {
     public const string ApiMainToken = "https://api.strava.com/v3";

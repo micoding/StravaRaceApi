@@ -8,6 +8,10 @@ namespace StravaRaceAPI.Api;
 
 public interface ITokenHandler
 {
+    /// <summary>
+    ///     Gets accessToken.
+    /// </summary>
+    /// <returns>JWT access token.</returns>
     string GetAccessToken();
 }
 
@@ -27,10 +31,7 @@ public class TokenHandler : ITokenHandler
         PrepareToken().Wait();
     }
 
-    /// <summary>
-    ///     Gets accessToken.
-    /// </summary>
-    /// <returns>JWT access token.</returns>
+    /// <inheritdoc />
     public string GetAccessToken()
     {
         Task.Run(PrepareToken().Wait);

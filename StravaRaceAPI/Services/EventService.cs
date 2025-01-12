@@ -9,13 +9,61 @@ namespace StravaRaceAPI.Services;
 
 public interface IEventService
 {
+    /// <summary>
+    ///     Create new Event in API.
+    /// </summary>
+    /// <param name="eventDto">DTO of the Event to be created.</param>
+    /// <returns cref="Event">Created Event.</returns>
     Task<Event> CreateEvent(CreateEventDTO eventDto);
+
+    /// <summary>
+    ///     Get all Events.
+    /// </summary>
+    /// <returns cref="Event">List of all the Events.</returns>
     Task<List<Event>> GetAllEvents();
+
+    /// <summary>
+    ///     Get Event by id.
+    /// </summary>
+    /// <param name="eventId">ID of the Event to return.</param>
+    /// <returns cref="Event">Event with the ID.</returns>
     Task<Event> GetEvent(ulong eventId);
+
+    /// <summary>
+    ///     Add competitors to the Event.
+    /// </summary>
+    /// <param name="eventId">ID of the event to be modified.</param>
+    /// <param name="competitorIds">List of IDs of the competitors to be added.</param>
     Task AddCompetitors(ulong eventId, List<int> competitorIds);
+
+    /// <summary>
+    ///     Add segments to the Event.
+    /// </summary>
+    /// <param name="eventId">ID of the event to be modified.</param>
+    /// <param name="segmentIds">List of IDs of the segments to be added.</param>
     Task AddSegments(ulong eventId, List<ulong> segmentIds);
+
+    /// <summary>
+    ///     Add result to the Event.
+    /// </summary>
+    /// <param name="userId">ID of the user with the result.</param>
+    /// <param name="eventId">ID of the Event with the result.</param>
+    /// <param name="segmentId">ID of the segment with the result.</param>
+    /// <param name="time">The result time in seconds.</param>
     Task AddResult(int userId, ulong eventId, ulong segmentId, uint time);
+
+    /// <summary>
+    ///     Remove competitors from the Event.
+    /// </summary>
+    /// <param name="eventId">ID of the Event to be modified.</param>
+    /// <param name="competitorIds">List of IDs of the competitors to be removed.</param>
     Task RemoveCompetitors(ulong eventId, List<int> competitorIds);
+
+    /// <summary>
+    ///     Remove segments from the Event.
+    /// </summary>
+    /// <param name="eventId">ID of the Event to be modified.</param>
+    /// <param name="segmentsIds">List of IDs of the segments to be removed.</param>
     Task RemoveSegments(ulong eventId, List<ulong> segmentsIds);
 }
 
@@ -35,6 +83,7 @@ public class EventService : IEventService
         _segmentClient = segmentClient;
     }
 
+    /// <inheritdoc />
     public async Task<Event> CreateEvent(CreateEventDTO eventDto)
     {
         var newEvent = _mapper.Map<Event>(eventDto);
@@ -49,6 +98,7 @@ public class EventService : IEventService
         return newEvent;
     }
 
+    /// <inheritdoc />
     public async Task<List<Event>> GetAllEvents()
     {
         var events = await _context.Events.ToListAsync();
@@ -58,11 +108,13 @@ public class EventService : IEventService
         return events;
     }
 
+    /// <inheritdoc />
     public async Task<Event> GetEvent(ulong eventId)
     {
         return await _context.TryGetEvent(eventId);
     }
 
+    /// <inheritdoc />
     public async Task AddCompetitors(ulong eventId, List<int> competitorIds)
     {
         var comp = await _context.TryGetEvent(eventId);
@@ -84,6 +136,7 @@ public class EventService : IEventService
         await _context.SaveChangesAsync();
     }
 
+    /// <inheritdoc />
     public async Task AddSegments(ulong eventId, List<ulong> segmentIds)
     {
         var comp = await _context.TryGetEvent(eventId);
@@ -98,6 +151,7 @@ public class EventService : IEventService
         await _context.SaveChangesAsync();
     }
 
+    /// <inheritdoc />
     public async Task AddResult(int userId, ulong eventId, ulong segmentId, uint time)
     {
         var newResult = new Result();
@@ -118,6 +172,7 @@ public class EventService : IEventService
         await _context.SaveChangesAsync();
     }
 
+    /// <inheritdoc />
     public async Task RemoveCompetitors(ulong eventId, List<int> competitorIds)
     {
         var comp = await _context.TryGetEvent(eventId);
@@ -138,6 +193,7 @@ public class EventService : IEventService
         await _context.SaveChangesAsync();
     }
 
+    /// <inheritdoc />
     public async Task RemoveSegments(ulong eventId, List<ulong> segmentsIds)
     {
         var comp = await _context.TryGetEvent(eventId);

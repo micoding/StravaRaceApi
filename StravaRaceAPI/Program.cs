@@ -1,10 +1,7 @@
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -16,11 +13,8 @@ using StravaRaceAPI.Api.Clients;
 using StravaRaceAPI.Authorization;
 using StravaRaceAPI.Endpoints;
 using StravaRaceAPI.Entities;
-using StravaRaceAPI.Exceptions;
 using StravaRaceAPI.Middlewares;
-using StravaRaceAPI.Models;
 using StravaRaceAPI.Services;
-using Swashbuckle.AspNetCore.Filters;
 using AuthenticationOptions = StravaRaceAPI.AuthenticationOptions;
 using JsonOptions = Microsoft.AspNetCore.Http.Json.JsonOptions;
 using TokenHandler = StravaRaceAPI.Api.TokenHandler;
@@ -49,7 +43,6 @@ builder.Services.AddScoped<IAuthorizationHandler, EventCompetitorRequirementHand
 
 builder.Services.AddScoped<ITokenHandler, TokenHandler>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("HttpClient");
 
 var authenticationOptions = new AuthenticationOptions();
@@ -82,14 +75,29 @@ builder.Services.AddDbContext<ApiDBContext>(options =>
 
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("JWT", new OpenApiSecurityScheme
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Standard Authorization header using the Bearer scheme.",
+        Description = "JWT Authorization header using the Bearer scheme.",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT"
     });
-    options.OperationFilter<SecurityRequirementsOperationFilter>();
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            []
+        }
+    });
 });
 
 LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -100,27 +108,6 @@ var app = builder.Build();
 
 app.MapEventEndpoints();
 app.MapUserEndpoints();
-
-app.MapPost("connectWithStrava",
-        async ([FromBody] object response, IMapper mapper, IUserService service) =>
-        {
-            var output = JsonSerializer.Deserialize<ConnnectWithStravaDTO>(response.ToString() ?? string.Empty);
-            var userDto = output?.athlete;
-            var tokenDto = JsonSerializer.Deserialize<TokenDTO>(response.ToString() ?? string.Empty);
-            if (userDto is null || tokenDto is null) throw new ApiCommunicationError("Invalid response");
-
-            var user = mapper.Map<User>(userDto);
-            var tokenApi = mapper.Map<Token>(tokenDto);
-
-            tokenApi.User = user;
-            user.Token = tokenApi;
-
-            var token = await service.SignInWithStrava(user);
-
-            return Results.Ok(token);
-        })
-    .Produces(StatusCodes.Status404NotFound)
-    .Produces(StatusCodes.Status500InternalServerError);
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseAuthentication();

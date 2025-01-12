@@ -1,3 +1,5 @@
+using System.Text.Json;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StravaRaceAPI.Api.Clients;
@@ -10,6 +12,11 @@ namespace StravaRaceAPI.Endpoints;
 
 public static class UserEndpoints
 {
+    /// <summary>
+    ///     User related endpoint registration method.
+    /// </summary>
+    /// <param name="app" cref="WebApplication">WebApplication.</param>
+    /// <returns cref="WebApplication">WebApplication.</returns>
     public static WebApplication MapUserEndpoints(this WebApplication app)
     {
         app.MapGet("user/{id:int}", GetUserById)
@@ -23,6 +30,11 @@ public static class UserEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status500InternalServerError)
             .RequireAuthorization("LoggedIn");
+
+        app.MapPost("connectWithStrava", ConnectWithStrava)
+            .Produces<string>()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status500InternalServerError);
 
         return app;
     }
@@ -47,5 +59,24 @@ public static class UserEndpoints
 
         var starred = await segmentClient.GetStarredSegmentsAsync();
         return Results.Ok(starred);
+    }
+
+    private static async Task<IResult> ConnectWithStrava([FromBody] object response, IMapper mapper,
+        IUserService service)
+    {
+        var output = JsonSerializer.Deserialize<ConnnectWithStravaDTO>(response.ToString() ?? string.Empty);
+        var userDto = output?.athlete;
+        var tokenDto = JsonSerializer.Deserialize<TokenDTO>(response.ToString() ?? string.Empty);
+        if (userDto is null || tokenDto is null) throw new ApiCommunicationError("Invalid response");
+
+        var user = mapper.Map<User>(userDto);
+        var tokenApi = mapper.Map<Token>(tokenDto);
+
+        tokenApi.User = user;
+        user.Token = tokenApi;
+
+        var token = await service.SignInWithStrava(user);
+
+        return Results.Ok(token);
     }
 }

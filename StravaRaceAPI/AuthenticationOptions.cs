@@ -1,5 +1,8 @@
 namespace StravaRaceAPI;
 
+/// <summary>
+///     Object representing API authentication options.
+/// </summary>
 public class AuthenticationOptions
 {
     public string JwtKey { get; set; } = null!;

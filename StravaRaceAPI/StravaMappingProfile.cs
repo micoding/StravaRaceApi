@@ -4,6 +4,9 @@ using StravaRaceAPI.Models;
 
 namespace StravaRaceAPI;
 
+/// <summary>
+///     AutoMapper mapping profile.
+/// </summary>
 public class StravaMappingProfile : Profile
 {
     public StravaMappingProfile()
