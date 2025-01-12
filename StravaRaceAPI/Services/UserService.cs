@@ -1,10 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using StravaRaceAPI.Entities;
-using StravaRaceAPI.Exceptions;
 
 namespace StravaRaceAPI.Services;
 
@@ -27,7 +21,7 @@ public interface IUserService
     /// <summary>
     ///     Delete user.
     /// </summary>
-    /// <param name="userId" cref="User">User to be deleted.</param>
+    /// <param name="userId">Users ID to be deleted.</param>
     Task Delete(int userId);
 
     /// <summary>

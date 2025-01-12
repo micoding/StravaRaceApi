@@ -1,5 +1,3 @@
-using StravaRaceAPI.Exceptions;
-
 namespace StravaRaceAPI.Middlewares;
 
 public class ErrorHandlingMiddleware : IMiddleware

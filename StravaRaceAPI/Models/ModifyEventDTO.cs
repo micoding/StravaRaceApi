@@ -1,5 +1,3 @@
-using StravaRaceAPI.Entities;
-
 namespace StravaRaceAPI.Models;
 
 public class ModifyEventDTO

@@ -1,9 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using StravaRaceAPI.Entities;
-using StravaRaceAPI.Exceptions;
-using StravaRaceAPI.Models;
-using StravaRaceAPI.Services;
-
 namespace StravaRaceAPI.Api;
 
 public interface ITokenHandler

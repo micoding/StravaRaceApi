@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace StravaRaceAPI.Entities;
 
 public class ApiDBContext : DbContext

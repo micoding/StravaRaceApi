@@ -1,24 +1,3 @@
-using System.Text;
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using NLog;
-using NLog.Web;
-using StravaRaceAPI;
-using StravaRaceAPI.Api;
-using StravaRaceAPI.Api.Clients;
-using StravaRaceAPI.Authorization;
-using StravaRaceAPI.Endpoints;
-using StravaRaceAPI.Entities;
-using StravaRaceAPI.Middlewares;
-using StravaRaceAPI.Services;
-using AuthenticationOptions = StravaRaceAPI.AuthenticationOptions;
-using JsonOptions = Microsoft.AspNetCore.Http.Json.JsonOptions;
-using TokenHandler = StravaRaceAPI.Api.TokenHandler;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
