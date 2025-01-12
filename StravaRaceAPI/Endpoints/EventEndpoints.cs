@@ -12,6 +12,11 @@ namespace StravaRaceAPI.Endpoints;
 
 public static class EventEndpoints
 {
+    /// <summary>
+    ///     Event related endpoint registration method.
+    /// </summary>
+    /// <param name="app" cref="WebApplication">WebApplication.</param>
+    /// <returns cref="WebApplication">WebApplication.</returns>
     public static WebApplication MapEventEndpoints(this WebApplication app)
     {
         app.MapGet("events", GetAll)
