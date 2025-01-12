@@ -25,7 +25,7 @@ public class TestEventService
         _userContextService.Setup(s => s.GetUserId).Returns(1);
 
         _segmentClient = new Mock<ISegmentClient>();
-        _segmentClient.Setup(r => r.PullSegment(It.IsAny<int>()))
+        _segmentClient.Setup(r => r.PullSegment(It.IsAny<ulong>()))
             .Returns(Task.FromResult(PreapreObject.CreateSegment));
 
         _context = new ApiDBContext(_options);
@@ -85,12 +85,12 @@ public class TestEventService
     public async Task CreateEvent_WhenSegmentNotInDB_InvokesPullMethod()
     {
         await AddUser();
-        _segmentClient.Setup(x => x.PullSegment(It.IsAny<int>()))
+        _segmentClient.Setup(x => x.PullSegment(It.IsAny<ulong>()))
             .Returns(Task.FromResult(PreapreObject.CreateSegment)).Verifiable();
 
         await _serviceUnderTest.CreateEvent(PreapreObject.CreateEventDTO);
 
-        _segmentClient.Verify(x => x.PullSegment(It.IsAny<int>()), Times.Once);
+        _segmentClient.Verify(x => x.PullSegment(It.IsAny<ulong>()), Times.Once);
     }
 
     [Test]
@@ -100,18 +100,18 @@ public class TestEventService
         _context.Segments.Add(PreapreObject.CreateSegment);
         await _context.SaveChangesAsync();
 
-        _segmentClient.Setup(x => x.PullSegment(It.IsAny<int>()))
+        _segmentClient.Setup(x => x.PullSegment(It.IsAny<ulong>()))
             .Returns(Task.FromResult(PreapreObject.CreateSegment)).Verifiable();
 
         await _serviceUnderTest.CreateEvent(PreapreObject.CreateEventDTO);
 
-        _segmentClient.Verify(x => x.PullSegment(It.IsAny<int>()), Times.Never);
+        _segmentClient.Verify(x => x.PullSegment(It.IsAny<ulong>()), Times.Never);
     }
 
-    [TestCase(-1)]
-    [TestCase(0)]
-    [TestCase(10)]
-    public void GetEvent_EventNotExist_Throws404NotFoundException(int eventId)
+    [TestCase(1u)]
+    [TestCase(0u)]
+    [TestCase(10u)]
+    public void GetEvent_EventNotExist_Throws404NotFoundException(ulong eventId)
     {
         var ex = Assert.Throws<AggregateException>(() => _serviceUnderTest.GetEvent(eventId).Wait());
         Assert.That(ex.InnerException, Is.TypeOf<NotFoundException>());
@@ -126,7 +126,7 @@ public class TestEventService
 
         var createdEvent = _mapper.Map<Event>(created);
 
-        var eventReturned = await _serviceUnderTest.GetEvent((int)createdEvent.Id);
+        var eventReturned = await _serviceUnderTest.GetEvent(createdEvent.Id);
         Assert.That(eventReturned, Is.EqualTo(createdEvent));
     }
 
@@ -139,7 +139,7 @@ public class TestEventService
         const int eventId = 1;
         const int competitorId = 2;
 
-        var ex = Assert.Throws<AggregateException>(() => _serviceUnderTest.AddCompetitor(eventId, competitorId).Wait());
+        var ex = Assert.Throws<AggregateException>(() => _serviceUnderTest.AddCompetitors(eventId, [competitorId]).Wait());
         Assert.That(ex.InnerException, Is.TypeOf<NotFoundException>());
     }
 
@@ -150,7 +150,8 @@ public class TestEventService
         const int eventId = 1;
         const int competitorId = 1;
 
-        var ex = Assert.Throws<AggregateException>(() => _serviceUnderTest.AddCompetitor(eventId, competitorId).Wait());
+        var ex = Assert.Throws<AggregateException>(() =>
+            _serviceUnderTest.AddCompetitors(eventId, [competitorId]).Wait());
         Assert.That(ex.InnerException, Is.TypeOf<NotFoundException>());
     }
 
@@ -164,7 +165,7 @@ public class TestEventService
         const int eventId = 1;
         const int competitorId = 2;
 
-        await _serviceUnderTest.AddCompetitor(eventId, competitorId);
+        await _serviceUnderTest.AddCompetitors(eventId, [competitorId]);
 
         var returnedEvent = await _serviceUnderTest.GetEvent(eventId);
         Assert.That(returnedEvent.Competitors.Exists(x => x.Id == competitorId));
@@ -182,7 +183,7 @@ public class TestEventService
         createdEvent.Competitors.Add(_context.Users.First(x => x.Id == competitorId));
         await _context.SaveChangesAsync();
 
-        var ex = Assert.Throws<AggregateException>(() => _serviceUnderTest.AddCompetitor(eventId, competitorId).Wait());
+        var ex = Assert.Throws<AggregateException>(() => _serviceUnderTest.AddCompetitors(eventId, [competitorId]).Wait());
         Assert.That(ex.InnerException, Is.TypeOf<CompetitorAssignedToEventException>());
     }
 }

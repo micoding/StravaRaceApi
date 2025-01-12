@@ -20,14 +20,20 @@ public class StravaMappingProfile : Profile
             return dest;
         });
 
+        CreateMap<Result, ResultDTO>();
+
+        CreateMap<User, AthleteDTO>();
+
+        CreateMap<Event, AllEventDTO>();
+
+        CreateMap<Segment, SegmentDTO>();
+
         CreateMap<AthleteDTO, User>()
             .ForMember(x => x.Gender, m => m.MapFrom(x => x.Sex))
             .ForMember(x => x.ProfilePictureUrl, opt => opt.MapFrom(x => x.PhotoUrl))
             .ReverseMap()
             .ForMember(x => x.Sex, opt => opt.MapFrom(x => x.Gender))
             .ForMember(x => x.PhotoUrl, opt => opt.MapFrom(x => x.ProfilePictureUrl));
-
-        CreateMap<Segment, ShowEventDTO>();
 
         CreateMap<Event, ShowEventDTO>();
 

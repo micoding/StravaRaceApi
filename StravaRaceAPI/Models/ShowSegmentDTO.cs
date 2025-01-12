@@ -4,5 +4,5 @@ namespace StravaRaceAPI.Models;
 
 public class ShowSegmentDTO : SegmentDTO
 {
-    public List<Result> Results { get; set; } = null!;
+    public List<ResultDTO> Results { get; set; } = null!;
 }

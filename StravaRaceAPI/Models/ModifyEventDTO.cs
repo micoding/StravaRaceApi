@@ -1,12 +1,13 @@
+using StravaRaceAPI.Entities;
+
 namespace StravaRaceAPI.Models;
 
-public class CreateEventDTO
+public class ModifyEventDTO
 {
     public string Name { get; set; } = null!;
     public string Description { get; set; } = null!;
-    public DateTime CreationDate { get; set; }
+    public List<User> Competitors { get; set; } = new();
+    public List<Segment> Segments { get; set; } = new();
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
-    public List<ulong> SegmentIds { get; set; } = null!;
-    public int CreatorId { get; set; }
 }

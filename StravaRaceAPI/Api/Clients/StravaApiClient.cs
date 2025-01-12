@@ -13,11 +13,12 @@ public abstract class StravaApiClient
     /// </summary>
     /// <param name="tokenHandler">User TokenHandler to be used for the Strava API requests.</param>
     /// <param name="logger">Logger</param>
-    protected StravaApiClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger)
+    /// <param name="httpClient">HttpClient</param>
+    protected StravaApiClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger, IHttpClientFactory httpClient)
     {
         Logger = logger;
         TokenHandler = tokenHandler;
-        HttpClient = new HttpClient();
+        HttpClient = httpClient.CreateClient("HttpClient");
 
         HttpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", tokenHandler.GetAccessToken());

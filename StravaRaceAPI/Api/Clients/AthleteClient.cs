@@ -10,7 +10,8 @@ public interface IAthleteClient
 
 public class AthleteClient : StravaApiClient, IAthleteClient
 {
-    public AthleteClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger) : base(tokenHandler, logger)
+    public AthleteClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger,
+        IHttpClientFactory httpClientFactory) : base(tokenHandler, logger, httpClientFactory)
     {
     }
 
