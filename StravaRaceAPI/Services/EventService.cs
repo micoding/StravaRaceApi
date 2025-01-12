@@ -1,10 +1,3 @@
-using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using StravaRaceAPI.Api.Clients;
-using StravaRaceAPI.Entities;
-using StravaRaceAPI.Exceptions;
-using StravaRaceAPI.Models;
-
 namespace StravaRaceAPI.Services;
 
 public interface IEventService

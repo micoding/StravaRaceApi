@@ -1,7 +1,3 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using StravaRaceAPI.Entities;
-
 namespace StravaRaceAPI.Authorization;
 
 public class EventAuthorRequirementHandler : AuthorizationHandler<EventAuthorRequirement, Event>

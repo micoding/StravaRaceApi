@@ -1,13 +1,3 @@
-using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StravaRaceAPI.Authorization;
-using StravaRaceAPI.Entities;
-using StravaRaceAPI.Exceptions;
-using StravaRaceAPI.Models;
-using StravaRaceAPI.Services;
-
 namespace StravaRaceAPI.Endpoints;
 
 public static class EventEndpoints

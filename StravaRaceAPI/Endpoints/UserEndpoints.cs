@@ -1,12 +1,4 @@
 using System.Text.Json;
-using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StravaRaceAPI.Api.Clients;
-using StravaRaceAPI.Entities;
-using StravaRaceAPI.Exceptions;
-using StravaRaceAPI.Models;
-using StravaRaceAPI.Services;
 
 namespace StravaRaceAPI.Endpoints;
 

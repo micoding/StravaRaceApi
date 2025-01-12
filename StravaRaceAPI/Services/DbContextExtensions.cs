@@ -1,7 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using StravaRaceAPI.Entities;
-using StravaRaceAPI.Exceptions;
-
 namespace StravaRaceAPI.Services;
 
 public static class DbContextExtensions

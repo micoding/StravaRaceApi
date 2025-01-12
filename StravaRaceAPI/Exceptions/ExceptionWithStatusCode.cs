@@ -1,5 +1,3 @@
-using System.Net;
-
 namespace StravaRaceAPI.Exceptions;
 
 public abstract class ExceptionWithStatusCode : Exception

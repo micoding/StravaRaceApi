@@ -1,7 +1,3 @@
-using AutoMapper;
-using StravaRaceAPI.Entities;
-using StravaRaceAPI.Models;
-
 namespace StravaRaceAPI;
 
 /// <summary>
