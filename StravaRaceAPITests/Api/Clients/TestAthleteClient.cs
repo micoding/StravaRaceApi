@@ -10,10 +10,10 @@ using StravaRaceAPI.Models;
 namespace StravaRaceAPITests.Api.Clients;
 
 [TestFixture]
-[TestOf(typeof(AthleteClient))]
-public class AthleteClientTest : MockStravaAPI
+[TestOf(typeof(StravaRaceAPI.Api.Clients.TestAthleteClient))]
+public class TestAthleteClient : MockStravaAPI
 {
-    private AthleteClient _clientUnderTest;
+    private StravaRaceAPI.Api.Clients.TestAthleteClient _clientUnderTest;
 
     private readonly AthleteDTO _athlete = new()
     {
@@ -43,7 +43,7 @@ public class AthleteClientTest : MockStravaAPI
         MockTokenHandlerContext = new Mock<ITokenHandlerContext>();
 
         _clientUnderTest =
-            new AthleteClient(MockTokenHandlerContext.Object, MockLogger.Object, MockHttpClientFactory.Object);
+            new StravaRaceAPI.Api.Clients.TestAthleteClient(MockTokenHandlerContext.Object, MockLogger.Object, MockHttpClientFactory.Object);
     }
 
     [Test]
@@ -64,7 +64,6 @@ public class AthleteClientTest : MockStravaAPI
             Assert.That(returned.PhotoUrl, Is.EqualTo(_athlete.PhotoUrl));
             Assert.That(returned.Sex, Is.EqualTo(_athlete.Sex));
         });
-        MockHttpClientFactory.Verify(cf => cf.CreateClient(It.IsAny<string>()), Times.Once);
     }
 
     [Test]

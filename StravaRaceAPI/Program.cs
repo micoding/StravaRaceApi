@@ -15,7 +15,7 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 builder.Services.AddScoped<ISegmentClient, SegmentClient>();
-builder.Services.AddScoped<IAthleteClient, AthleteClient>();
+builder.Services.AddScoped<IAthleteClient, TestAthleteClient>();
 builder.Services.AddScoped<IActivityClient, ActivityClient>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, EventAuthorRequirementHandler>();

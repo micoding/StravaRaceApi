@@ -8,7 +8,7 @@ public interface ISegmentClient
     /// <returns>List of all starred users segments.</returns>
     /// <exception cref="ApiCommunicationError">When response fails.</exception>
     /// <exception cref="NotFoundException">When no starred segment found.</exception>
-    Task<List<SegmentDTO>> GetStarredSegmentsAsync();
+    Task<List<SegmentDTO>> GetStarredSegments();
 
     /// <summary>
     ///     Get the Segment by its id.
@@ -28,7 +28,7 @@ public class SegmentClient : StravaApiClient, ISegmentClient
     }
 
     /// <inheritdoc />
-    public async Task<List<SegmentDTO>> GetStarredSegmentsAsync()
+    public async Task<List<SegmentDTO>> GetStarredSegments()
     {
         var response = await HttpClient.GetAsync(Endpoints.SegmentsStarred);
         if (!response.IsSuccessStatusCode)

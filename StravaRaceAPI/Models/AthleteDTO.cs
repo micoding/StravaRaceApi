@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+
 namespace StravaRaceAPI.Models;
 
 public class AthleteDTO
@@ -10,7 +12,7 @@ public class AthleteDTO
 
     [JsonPropertyName("username")] public string Username { get; set; } = null!;
 
-    [JsonPropertyName("PhotoUrl")] public string PhotoUrl { get; set; } = null!;
+    [JsonPropertyName("profile")] [JsonProperty(PropertyName = "profile")] public string PhotoUrl { get; set; } = null!;
 
     [JsonPropertyName("sex")] public string Sex { get; set; } = null!;
 }

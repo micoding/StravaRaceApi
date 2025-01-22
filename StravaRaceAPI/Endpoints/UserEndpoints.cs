@@ -49,7 +49,7 @@ public static class UserEndpoints
         if (user is null)
             throw new NotFoundException($"User with id {id} not found");
 
-        var starred = await segmentClient.GetStarredSegmentsAsync();
+        var starred = await segmentClient.GetStarredSegments();
         return Results.Ok(starred);
     }
 

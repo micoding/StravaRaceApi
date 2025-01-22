@@ -11,9 +11,9 @@ public interface IAthleteClient
     Task<AthleteDTO> GetAthleteAsync();
 }
 
-public class AthleteClient : StravaApiClient, IAthleteClient
+public class TestAthleteClient : StravaApiClient, IAthleteClient
 {
-    public AthleteClient(ITokenHandlerContext tokenHandler, ILogger<StravaApiClient> logger,
+    public TestAthleteClient(ITokenHandlerContext tokenHandler, ILogger<StravaApiClient> logger,
         IHttpClientFactory httpClientFactory) : base(tokenHandler, logger, httpClientFactory)
     {
     }
