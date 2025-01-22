@@ -13,6 +13,8 @@ public class ApiDBContext : DbContext
     public DbSet<Token> Tokens { get; set; }
     public DbSet<UserWithEvent> UsersWithEvents { get; set; }
 
+    public DbSet<RaceSegment> RaceSegments { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Event>(e =>

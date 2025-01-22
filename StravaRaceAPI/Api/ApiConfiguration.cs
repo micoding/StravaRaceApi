@@ -8,6 +8,8 @@ public class ApiConfiguration
     public int ClientId { get; set; }
     public string? ClientSecret { get; set; }
 
+    public string? WebhookVerifyToken { get; set; }
+
     /// <summary>
     ///     Static object containing API configuration.
     /// </summary>

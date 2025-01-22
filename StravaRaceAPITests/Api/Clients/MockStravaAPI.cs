@@ -9,5 +9,5 @@ public abstract class MockStravaAPI
 {
     protected readonly Mock<IHttpClientFactory> MockHttpClientFactory = new();
     protected readonly Mock<ILogger<StravaApiClient>> MockLogger = new();
-    protected readonly Mock<ITokenHandler> MockTokenHandler = new();
+    protected Mock<ITokenHandlerContext> MockTokenHandlerContext = new();
 }
