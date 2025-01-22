@@ -120,7 +120,7 @@ public class EventService : IEventService
         var notEnrolled = competitorIds.Where(x => comp.Competitors.All(c => c.Id != x)).ToList();
 
         if (notEnrolled.Count == 0)
-            throw new CompetitorAssignedToEventException("All competitors already assigned to this event");
+            throw new ItemExistsException("All competitors already assigned to this event");
 
         var usersWithEvents = notEnrolled
             .Select(competitorId => new UserWithEvent { UserId = competitorId, EventId = eventId }).ToList();
@@ -138,7 +138,7 @@ public class EventService : IEventService
 
         var notEnrolled = segmentsToAssign.Where(x => comp.Segments.TrueForAll(s => s.Id != x.Id)).ToList();
 
-        if (notEnrolled.Count == 0) throw new Exception("All segments already assigned to this event");
+        if (notEnrolled.Count == 0) throw new ItemExistsException("All segments already assigned to this event");
 
         comp.Segments.AddRange(notEnrolled);
         await _context.SaveChangesAsync();
@@ -147,22 +147,7 @@ public class EventService : IEventService
     /// <inheritdoc />
     public async Task AddResult(int userId, ulong eventId, ulong segmentId, uint time)
     {
-        var newResult = new Result();
-        var usr = await _context.TryGetUser(userId);
-        var ev = await _context.TryGetEvent(eventId);
-        var seg = await ResolveSegments([segmentId]);
-
-        newResult.Event = ev;
-        newResult.Segment = seg.First();
-        newResult.Time = time;
-        newResult.User = usr;
-
-        if (await _context.Results.AnyAsync(r =>
-                r.EventId == newResult.EventId && r.SegmentId == newResult.SegmentId && r.UserId == newResult.UserId))
-            throw new ItemExistsException("Result already exists");
-
-        await _context.Results.AddAsync(newResult);
-        await _context.SaveChangesAsync();
+        await _context.AddResult(userId, eventId, segmentId, time);
     }
 
     /// <inheritdoc />
@@ -170,15 +155,9 @@ public class EventService : IEventService
     {
         var comp = await _context.TryGetEvent(eventId);
 
-        var notExist = competitorIds.Where(x => _context.Users.All(usr => usr.Id != x));
+        var toRemove = competitorIds.Where(x => comp.Competitors.Any(c => c.Id == x)).ToList();
 
-        if (notExist.Any())
-            throw new NotFoundException("Given users not found");
-
-        var toRemove = competitorIds.Where(x => comp.Competitors.All(c => c.Id == x)).ToList();
-
-        if (toRemove.Count == 0)
-            throw new NotFoundException("All competitors not assigned to this event");
+        if (toRemove.Count == 0) return;
 
         var competitorsToRemove = await _context.UsersWithEvents.Where(x => toRemove.Contains(x.UserId)).ToListAsync();
 
@@ -191,14 +170,14 @@ public class EventService : IEventService
     {
         var comp = await _context.TryGetEvent(eventId);
 
-        var toRemove = segmentsIds.Where(x => comp.Segments.All(c => c.Id == x)).ToList();
+        var toRemove = segmentsIds.Where(x => comp.Segments.Any(c => c.Id == x)).ToList();
 
-        if (toRemove.Count == 0)
-            throw new NotFoundException("All segments not assigned to this event");
+        if (toRemove.Count == 0) return;
 
-        var eventsToRemove = await _context.UsersWithEvents.Where(x => toRemove.Contains(x.EventId)).ToListAsync();
+        var segmentsToRemove = await _context.RaceSegments
+            .Where(rs => rs.EventId == eventId && toRemove.Contains(rs.SegmentId)).ToListAsync();
 
-        _context.UsersWithEvents.RemoveRange(eventsToRemove);
+        _context.RaceSegments.RemoveRange(segmentsToRemove);
         await _context.SaveChangesAsync();
     }
 

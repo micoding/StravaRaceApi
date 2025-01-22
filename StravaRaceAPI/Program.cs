@@ -16,11 +16,17 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 builder.Services.AddScoped<ISegmentClient, SegmentClient>();
 builder.Services.AddScoped<IAthleteClient, AthleteClient>();
+builder.Services.AddScoped<IActivityClient, ActivityClient>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, EventAuthorRequirementHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, EventCompetitorRequirementHandler>();
+builder.Services.AddScoped<IStravaWebhookClient, StravaWebhookClient>();
 
-builder.Services.AddScoped<ITokenHandler, TokenHandler>();
+builder.Services.AddScoped<IActivityClientStandalone, ActivityClientStandalone>();
+
+//builder.Services.AddScoped<ITokenHandler, TokenHandler>();
+builder.Services.AddScoped<ITokenHandlerInject, TokenHandlerInject>();
+builder.Services.AddScoped<ITokenHandlerContext, TokenHandlerContext>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient("HttpClient");
 
@@ -85,6 +91,7 @@ builder.Host.UseNLog();
 
 var app = builder.Build();
 
+app.MapWebHooks();
 app.MapEventEndpoints();
 app.MapUserEndpoints();
 

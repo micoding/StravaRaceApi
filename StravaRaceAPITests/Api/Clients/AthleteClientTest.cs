@@ -1,7 +1,11 @@
 using System.Net;
 using Moq;
 using Moq.Protected;
+using Newtonsoft.Json;
+using StravaRaceAPI.Api;
 using StravaRaceAPI.Api.Clients;
+using StravaRaceAPI.Exceptions;
+using StravaRaceAPI.Models;
 
 namespace StravaRaceAPITests.Api.Clients;
 
@@ -9,14 +13,26 @@ namespace StravaRaceAPITests.Api.Clients;
 [TestOf(typeof(AthleteClient))]
 public class AthleteClientTest : MockStravaAPI
 {
-    [SetUp]
-    public void Setup()
+    private AthleteClient _clientUnderTest;
+
+    private readonly AthleteDTO _athlete = new()
     {
-        var clientHandlerMock = new Mock<DelegatingHandler>();
+        Id = 1,
+        FirstName = "John",
+        LastName = "Doe",
+        Username = "john_doe",
+        PhotoUrl = "https://www.strava.com/photo/200?id=1",
+        Sex = "m"
+    };
+
+
+    private void Setup(HttpResponseMessage response)
+    {
+        var clientHandlerMock = new Mock<HttpMessageHandler>();
         clientHandlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK))
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.Is<HttpRequestMessage>(m => m.Method == HttpMethod.Get), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response)
             .Verifiable();
         clientHandlerMock.As<IDisposable>().Setup(s => s.Dispose());
 
@@ -24,16 +40,38 @@ public class AthleteClientTest : MockStravaAPI
 
         MockHttpClientFactory.Setup(cf => cf.CreateClient(It.IsAny<string>())).Returns(httpClient).Verifiable();
 
+        MockTokenHandlerContext = new Mock<ITokenHandlerContext>();
 
-        // MockHttpClientFactory.Setup(x => x.)
-        // _client = new AthleteClient(MockTokenHandler.Object, MockLogger.Object);
+        _clientUnderTest =
+            new AthleteClient(MockTokenHandlerContext.Object, MockLogger.Object, MockHttpClientFactory.Object);
     }
 
     [Test]
-    public void GetAthleteAsync_WhenCalled_ReturnsAthlete()
+    public async Task GetAthleteAsync_ReturnsAthlete()
     {
-        // MockHttpClientFactory.Verify(cf => cf.CreateClient());
-        // MockHttpClientFactory.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(),
-        //     ItExpr.IsAny<CancellationToken>());
+        Setup(new HttpResponseMessage(HttpStatusCode.OK)
+            { Content = new StringContent(JsonConvert.SerializeObject(_athlete)) });
+
+        var returned = await _clientUnderTest.GetAthleteAsync();
+
+        Assert.That(returned, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(returned.Id, Is.EqualTo(_athlete.Id));
+            Assert.That(returned.FirstName, Is.EqualTo(_athlete.FirstName));
+            Assert.That(returned.LastName, Is.EqualTo(_athlete.LastName));
+            Assert.That(returned.Username, Is.EqualTo(_athlete.Username));
+            Assert.That(returned.PhotoUrl, Is.EqualTo(_athlete.PhotoUrl));
+            Assert.That(returned.Sex, Is.EqualTo(_athlete.Sex));
+        });
+        MockHttpClientFactory.Verify(cf => cf.CreateClient(It.IsAny<string>()), Times.Once);
+    }
+
+    [Test]
+    public void GetAthleteAsync_WhenResponseNotSuccess_ThrowsApiCommunicationError()
+    {
+        Setup(new HttpResponseMessage(HttpStatusCode.Forbidden));
+
+        Assert.ThrowsAsync<ApiCommunicationError>(() => _clientUnderTest.GetAthleteAsync());
     }
 }

@@ -6,35 +6,30 @@ public interface ITokenHandler
     ///     Gets accessToken.
     /// </summary>
     /// <returns>JWT access token.</returns>
-    string GetAccessToken();
+    public string GetAccessToken();
 }
 
-public class TokenHandler : ITokenHandler
+public abstract class TokenHandler : ITokenHandler
 {
     private readonly ApiDBContext _context;
-    private readonly Token _token;
 
-    public TokenHandler(IUserContextService userService, ApiDBContext context)
+    protected TokenHandler(ApiDBContext context)
     {
         _context = context;
-
-        var user = _context.Users.Include(u => u.Token).SingleOrDefault(u => u.Id == userService.GetUserId);
-        var token = user?.Token;
-        _token = token ?? throw new TokenNotFoundException($"Token of the user: {userService.GetUserId} not found!");
-
-        PrepareToken().Wait();
     }
+
+    public Token Token { protected get; set; }
 
     /// <inheritdoc />
     public string GetAccessToken()
     {
         Task.Run(PrepareToken().Wait);
-        return _token.AccessToken;
+        return Token.AccessToken;
     }
 
     private async Task PrepareToken()
     {
-        if (string.IsNullOrEmpty(_token.AccessToken))
+        if (string.IsNullOrEmpty(Token.AccessToken))
             GetNewToken();
         if (!IsValid())
         {
@@ -45,13 +40,13 @@ public class TokenHandler : ITokenHandler
 
     private bool IsValid()
     {
-        return _token.ExpirationOfToken - TimeSpan.FromSeconds(10) > DateTimeOffset.UtcNow;
+        return Token.ExpirationOfToken - TimeSpan.FromSeconds(10) > DateTimeOffset.UtcNow;
     }
 
     private async Task Refresh()
     {
         var tmpHttpClient = new HttpClient();
-        tmpHttpClient.BaseAddress = new Uri(ApiConfiguration.Current.GetRefreshAccessToken(_token));
+        tmpHttpClient.BaseAddress = new Uri(ApiConfiguration.Current.GetRefreshAccessToken(Token));
         var response = tmpHttpClient.PostAsync(tmpHttpClient.BaseAddress, null).Result;
 
         if (!response.IsSuccessStatusCode)
@@ -61,9 +56,9 @@ public class TokenHandler : ITokenHandler
         if (tokenDto is null)
             throw new HttpRequestException($"Failed to refresh token: {response.StatusCode}");
 
-        _token.RefreshToken = tokenDto.RefreshToken;
-        _token.AccessToken = tokenDto.AccessToken;
-        _token.ExpirationOfToken = DateTime.UnixEpoch.AddSeconds(tokenDto.ExpiresAt);
+        Token.RefreshToken = tokenDto.RefreshToken;
+        Token.AccessToken = tokenDto.AccessToken;
+        Token.ExpirationOfToken = DateTime.UnixEpoch.AddSeconds(tokenDto.ExpiresAt);
     }
 
     private static void GetNewToken()

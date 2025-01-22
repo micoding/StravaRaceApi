@@ -32,8 +32,14 @@ public class UserContextService : IUserContextService
 
     public ClaimsPrincipal User => _httpContextAccessor.HttpContext?.User!;
 
-    public int? GetUserId =>
-        int.Parse(User.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)?.Value!);
+    public int? GetUserId
+    {
+        get
+        {
+            int.TryParse(User.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)?.Value!, out var userId);
+            return userId;
+        }
+    }
 
     public string GetUserName => User.FindFirst(c => c.Type == ClaimTypes.Name)!.Value;
 }

@@ -9,6 +9,8 @@ public static class Endpoints
     public const string StravaMain = "https://www.strava.com";
     public const string ApiMain = StravaMain + "/api/v3";
 
+    public const string Activities = ApiMain + "/activities";
+
     public const string Athlete = $"{ApiMain}/athlete";
 
     public const string Segment = $"{ApiMain}/segments";
@@ -20,6 +22,8 @@ public static class Endpoints
 
     private const string RedirectUrl = "http://localhost";
 
+    public const string WebHookUrl = ApiMain + "/push_subscriptions";
+
     public static string GetAuthorizationCode(this ApiConfiguration config, string redirectUrl = RedirectUrl)
     {
         return
@@ -30,5 +34,11 @@ public static class Endpoints
     {
         return
             $"{RefreshAccessToken}?client_id={config.ClientId}&client_secret={config.ClientSecret}&refresh_token={token.RefreshToken}&grant_type=refresh_token";
+    }
+
+    public static string GetWebhookSubscribe(this ApiConfiguration config, string redirectUrl = RedirectUrl)
+    {
+        return
+            $"{RedirectUrl}?client_id={config.ClientId}&client_secret={config.ClientSecret}&callback_url={redirectUrl}&verify_token=webhooktoken";
     }
 }

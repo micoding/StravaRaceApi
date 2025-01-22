@@ -13,7 +13,7 @@ public interface ISegmentClient
     /// <summary>
     ///     Get the Segment by its id.
     /// </summary>
-    /// <param name="segmentId">Id of the segment to get.</param>
+    /// <param name="segmentId">ID of the segment to get.</param>
     /// <returns>Segment with given segmentId.</returns>
     /// <exception cref="ApiCommunicationError">When response fails.</exception>
     /// <exception cref="NotFoundException">When no segment found.</exception>
@@ -22,7 +22,7 @@ public interface ISegmentClient
 
 public class SegmentClient : StravaApiClient, ISegmentClient
 {
-    public SegmentClient(ITokenHandler tokenHandler, ILogger<StravaApiClient> logger,
+    public SegmentClient(ITokenHandlerContext tokenHandler, ILogger<StravaApiClient> logger,
         IHttpClientFactory httpClientFactory) : base(tokenHandler, logger, httpClientFactory)
     {
     }
