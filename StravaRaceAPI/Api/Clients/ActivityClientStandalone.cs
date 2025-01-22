@@ -4,7 +4,7 @@ namespace StravaRaceAPI.Api.Clients;
 
 public interface IActivityClientStandalone
 {
-    Task<StravaActivity> GetActivityByIdAsync(ulong activityId);
+    Task<StravaActivity> GetActivityById(ulong activityId);
 }
 
 public class ActivityClientStandalone : IActivityClientStandalone
@@ -21,7 +21,7 @@ public class ActivityClientStandalone : IActivityClientStandalone
         _httpClient = httpClientFactory.CreateClient("HttpClient");
     }
 
-    public async Task<StravaActivity> GetActivityByIdAsync(ulong activityId)
+    public async Task<StravaActivity> GetActivityById(ulong activityId)
     {
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", _tokenHandler.GetAccessToken());

@@ -34,7 +34,7 @@ public static class WebHookEndpoints
 
         var openEvents = user.Events.Where(e => e.StartDate < timeOfTheEvent && e.EndDate > timeOfTheEvent).ToList();
 
-        var activity = await client.GetActivityByIdAsync(stravaActivityId);
+        var activity = await client.GetActivityById(stravaActivityId);
         var efforts = activity.SegmentsEfforts.FindAll(effort =>
             openEvents.Any(e => e.Segments.Select(s => s.Id).Contains(effort.Segment.Id)));
         foreach (var effort in efforts)
